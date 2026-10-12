@@ -20,7 +20,7 @@ DHCP gives each zone's devices addresses automatically. A Layer 3 main switch ro
 
 ## How to run it
 
-Download `stadium-network.html` and open it in any browser. It needs no install, no server and no internet connection (fonts fall back to system fonts when offline).
+Open it online at https://arhamj1.github.io/smart-stadium-network/ or download `index.html` and open it in any browser. It needs no install, no server and no internet connection (fonts fall back to system fonts when offline).
 
 ## What's in the simulator
 
