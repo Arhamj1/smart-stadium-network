@@ -1,0 +1,1174 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>Matchday Network Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: the map stays pinned on the left so messages can be watched while the right-hand tabs run tests, attacks and the crowd surge. Stacks below 1040px. */
+:root{
+  --bg:#EDF1EF; --surface:#FFFFFF; --surface2:#F4F7F5; --ink:#12201A; --muted:#58695F; --line:#D3DCD7;
+  --accent:#0F6E5A; --accent-ink:#FFFFFF;
+  --ok:#168A4F; --ok-bg:#DDF3E6; --bad:#CF3328; --bad-bg:#FBE3E0; --warn:#A86A06; --warn-bg:#FCEFD3;
+  --z-tkt:#3A6BDB; --z-pos:#0F8F96; --z-prs:#D4880F; --z-cctv:#C2386C; --z-wifi:#7C58CF;
+  --f-display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1210; --surface:#131C19; --surface2:#19251F; --ink:#E3EDE8; --muted:#8CA196; --line:#263530;
+    --accent:#3FC9A5; --accent-ink:#06201A;
+    --ok:#4ADE97; --ok-bg:#12301F; --bad:#FF6B5E; --bad-bg:#3A1815; --warn:#F2B24A; --warn-bg:#35280D;
+    --z-tkt:#6E97F5; --z-pos:#3CC4CB; --z-prs:#F2AE3F; --z-cctv:#EE6B9C; --z-wifi:#A68AF0;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1210; --surface:#131C19; --surface2:#19251F; --ink:#E3EDE8; --muted:#8CA196; --line:#263530;
+  --accent:#3FC9A5; --accent-ink:#06201A;
+  --ok:#4ADE97; --ok-bg:#12301F; --bad:#FF6B5E; --bad-bg:#3A1815; --warn:#F2B24A; --warn-bg:#35280D;
+  --z-tkt:#6E97F5; --z-pos:#3CC4CB; --z-prs:#F2AE3F; --z-cctv:#EE6B9C; --z-wifi:#A68AF0;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+.app{max-width:1500px;margin:0 auto;padding-inline:16px;padding-block:16px 40px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:34px;line-height:1.05;font-weight:700}
+h2{font-size:21px}
+h3{font-size:17px;margin-block:18px 8px}
+p{margin:0 0 10px}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono)}
+.eyebrow{font:500 11px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.top{display:flex;gap:16px 24px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.brand{min-width:0;flex:1 1 320px}
+.brand p{margin:6px 0 0;color:var(--muted);max-width:62ch;font-size:14.5px}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 12px;min-width:104px}
+.stat b{display:block;font:600 20px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.stat span{font:500 11px/1.2 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.btn{font:500 14px/1 var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:9px 13px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible,select:focus-visible,input:focus-visible,.node:focus-visible,.tab:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,var(--line))}
+.btn.sm{padding:7px 11px;font-size:13px}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
+.topo{padding:14px}
+.topo-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font:500 13px var(--f-body);color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.chk{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+.svgwrap{overflow-x:auto;border-radius:8px;background:var(--surface2);border:1px solid var(--line)}
+#svg{display:block;width:100%;height:auto}
+@media (max-width:700px){#svg{min-width:680px}}
+#svg text{font-family:var(--f-body);fill:var(--ink)}
+#svg .m{font-family:var(--f-mono);fill:var(--muted)}
+#svg .lk{stroke:var(--muted);stroke-width:2;fill:none;opacity:.75}
+#svg .hit{fill:transparent}
+#svg .node:hover .hit{fill:color-mix(in srgb,var(--zc) 12%,transparent)}
+#svg .node.sel .hit{fill:color-mix(in srgb,var(--zc) 20%,transparent)}
+#svg .zdiv{stroke:color-mix(in srgb,var(--zc) 45%,transparent);stroke-width:1}
+#svg .lk.wl{stroke-dasharray:3 4}
+#svg .lk.bad{stroke:var(--bad);stroke-dasharray:4 4;opacity:1}
+#svg .zone{fill:color-mix(in srgb,var(--zc) 9%,var(--surface));stroke:color-mix(in srgb,var(--zc) 55%,transparent);stroke-width:1.2}
+#svg .zt{font-family:var(--f-display);font-weight:700;font-size:19px;fill:var(--zc);letter-spacing:.03em}
+#svg .body{fill:var(--surface);stroke:var(--zc);stroke-width:2}
+#svg .ico{fill:none;stroke:var(--ink);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#svg .node{cursor:pointer}
+#svg .node:hover .body{stroke-width:3}
+#svg .node.sel .body{stroke-width:3.5;filter:drop-shadow(0 0 5px var(--zc))}
+#svg .node.off .body{stroke:var(--bad);stroke-dasharray:4 3}
+#svg .node.off{opacity:.75}
+#svg .core{fill:var(--surface);stroke:var(--ink);stroke-width:1.8}
+#svg .pkt{stroke:var(--surface);stroke-width:1.5}
+#svg .burst text{font-weight:700}
+#svg .rogue{fill:var(--bad-bg);stroke:var(--bad);stroke-width:1.5}
+.inspector{margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface2);min-height:92px}
+.inspector .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px;margin:8px 0}
+.kv div span{display:block;font:500 11px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.kv div b{font:500 14px var(--f-body);word-break:break-word}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.console{padding:0;overflow:hidden}
+.tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--surface2);scrollbar-width:thin}
+.tab{flex:0 0 auto;padding:13px 15px;font:600 18px var(--f-display);letter-spacing:.02em;color:var(--muted);background:none;border:0;border-bottom:3px solid transparent;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);background:var(--surface)}
+.pane{padding:16px}
+.pane[hidden]{display:none}
+.intro{background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:14.5px}
+.intro b{font-weight:600}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+label.f{display:flex;flex-direction:column;gap:5px;font:500 11.5px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+select,input[type=number]{font:400 14px var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:8px 9px;width:100%;min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font:500 11px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--surface2)}
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+.tscroll table td:first-child,.tscroll table th:first-child{padding-left:10px}
+.chip{display:inline-block;font:600 11.5px/1 var(--f-mono);letter-spacing:.04em;padding:4px 7px;border-radius:5px;white-space:nowrap}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
+.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.z{background:color-mix(in srgb,var(--zc) 16%,var(--surface));color:var(--zc)}
+.pill{font:600 12px var(--f-mono);padding:5px 10px;border-radius:999px;display:inline-block}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.row.sp{justify-content:space-between}
+.le{border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:var(--surface)}
+.le summary{cursor:pointer;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:14px}
+.le .rtt{margin-left:auto;font:400 11.5px var(--f-mono);color:var(--muted)}
+.le .why{padding:0 10px 8px;font-size:14px}
+ol.steps{margin:0;padding:10px 12px 10px 30px;background:var(--surface2);border-top:1px solid var(--line);border-radius:0 0 8px 8px;font-size:13.5px}
+ol.steps li{margin:3px 0}
+ol.steps li.x{color:var(--bad)}
+ol.steps li.ok{color:var(--ok)}
+ol.steps code,.rule code,.sl code{font:400 11px var(--f-mono);color:var(--muted);display:block;word-break:break-all}
+pre{margin:0;font:400 12.5px/1.6 var(--f-mono);white-space:pre;overflow-x:auto}
+pre.code{padding:12px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;max-height:520px;overflow:auto}
+.cons{font-size:13.5px;padding:8px 10px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;max-height:240px;overflow:auto;min-height:56px;font-size:12.5px}
+.cons div{padding:3px 0;border-bottom:1px dashed var(--line)}
+.cons div:last-child{border-bottom:0}
+.cons .who{font-weight:600}
+.acl{border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:var(--surface)}
+.acl>summary{padding:8px 10px;cursor:pointer;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-weight:600}
+.acl table{font-size:13.5px}
+.rule .auto{color:var(--muted);font-size:12.5px}
+.mx td,.mx th{text-align:center;padding:6px 4px}
+.mx td.c{font:500 12.5px var(--f-body);border:1px solid var(--surface);border-radius:4px}
+.mx td.ok{background:var(--ok-bg);color:var(--ok)}
+.mx td.bad{background:var(--bad-bg);color:var(--bad)}
+.mx td.warn{background:var(--warn-bg);color:var(--warn)}
+.mx td.l2{background:var(--surface2);color:var(--muted)}
+.mx th.rh{text-align:left}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.sc{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.sc .btn{text-align:left;line-height:1.35}
+.sc .btn small{display:block;color:var(--muted);font-size:11.5px;margin-top:3px}
+canvas{display:block;width:100%;height:210px;background:var(--surface2);border:1px solid var(--line);border-radius:8px}
+.lg{display:flex;flex-wrap:wrap;gap:6px 14px;font:500 13px var(--f-body);color:var(--muted);margin:4px 0 6px}
+.lg i{display:inline-block;width:14px;height:3px;margin-right:5px;vertical-align:3px;border-radius:2px}
+.qctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end}
+.sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:600}
+.sw input{position:absolute;opacity:0}
+.sw .tr{width:40px;height:22px;border-radius:11px;background:var(--line);position:relative;transition:background .15s}
+.sw .tr::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:transform .15s}
+.sw input:checked+.tr{background:var(--accent)}
+.sw input:checked+.tr::after{transform:translateX(18px)}
+.sw input:focus-visible+.tr{outline:2px solid var(--accent);outline-offset:2px}
+.say{padding:10px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--line);margin:10px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chips .btn{padding:7px 11px;font:500 13px var(--f-body)}
+.chips .btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.note{font-size:13.5px;color:var(--muted)}
+dl.gl{display:grid;grid-template-columns:minmax(120px,180px) minmax(0,1fr);gap:0;margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+dl.gl dt,dl.gl dd{margin:0;padding:8px 10px;border-bottom:1px solid var(--line)}
+dl.gl dt{font-weight:600;background:var(--surface2)}
+dl.gl dd small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+@media (max-width:520px){dl.gl{grid-template-columns:minmax(0,1fr)}dl.gl dt{border-bottom:0}}
+ol.demo{padding-left:20px;margin:0}
+ol.demo li{margin:6px 0}
+@media (max-width:1040px){.grid{grid-template-columns:minmax(0,1fr)}}
+@media (min-width:1041px) and (min-height:760px){.topo{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">Smart football stadium · segmented network</div>
+      <h1>Matchday Network Console</h1>
+      <p>Five groups share one stadium network. Each gets its own zone, rules decide who may talk to whom, the TV feed gets a fast lane, and sockets lock out strangers.</p>
+    </div>
+    <div class="stats" id="stats" aria-live="polite"></div>
+    <button class="btn" id="themeBtn" type="button">Switch theme</button>
+  </header>
+
+  <main class="grid">
+    <section class="card topo" aria-label="Network map">
+      <div class="topo-head">
+        <h2>Network map</h2>
+        <div class="legend" id="legend"></div>
+        <label class="chk"><input type="checkbox" id="animToggle" checked> Animate messages</label>
+      </div>
+      <div class="svgwrap"><svg id="svg" viewBox="0 0 1000 742" role="img" aria-label="Stadium network map: Internet, Internet Router, Main Switch, five zone switches and their devices"></svg></div>
+      <div class="inspector" id="inspector"></div>
+    </section>
+
+    <section class="card console" aria-label="Console">
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="tests" aria-selected="true">Test</button>
+        <button class="tab" role="tab" data-tab="addr" aria-selected="false">Addresses</button>
+        <button class="tab" role="tab" data-tab="sec" aria-selected="false">Security</button>
+        <button class="tab" role="tab" data-tab="qos" aria-selected="false">Fast lane</button>
+        <button class="tab" role="tab" data-tab="cfg" aria-selected="false">Device setup</button>
+        <button class="tab" role="tab" data-tab="design" aria-selected="false">Design</button>
+        <button class="tab" role="tab" data-tab="guide" aria-selected="false">Guide</button>
+      </div>
+
+      <!-- TEST -->
+      <div class="pane" id="pane-tests" role="tabpanel">
+        <div class="intro"><b>What this tab does:</b> pick a sender, a receiver and a type of message, then press Send. The message moves across the map. If a rule stops it you see a red ✕, and the log below explains which rule did it and why.</div>
+        <div class="form">
+          <label class="f">From<select id="tSrc"></select></label>
+          <label class="f">To<select id="tDst"></select></label>
+          <label class="f">Message type<select id="tPro"></select></label>
+          <button class="btn primary" id="tRun" type="button">Send</button>
+        </div>
+        <div class="row sp" style="margin-top:18px">
+          <h3 style="margin:0">Planned tests</h3>
+          <div class="row"><span class="pill" id="allSum"></span><button class="btn sm" id="runAll" type="button">Run all tests</button></div>
+        </div>
+        <p class="note" style="margin-top:6px">Each row is something our design promises. "Plan says" is what should happen, "Result" is what the simulator did. Click a row to watch it on the map.</p>
+        <div class="tscroll"><table id="checks"><thead><tr><th>#</th><th>Test</th><th>Plan says</th><th>Result</th><th>Match?</th></tr></thead><tbody></tbody></table></div>
+        <h3>Message log</h3>
+        <div id="log"></div>
+      </div>
+
+      <!-- ADDRESSES -->
+      <div class="pane" id="pane-addr" role="tabpanel" hidden>
+        <div class="intro"><b>What this tab shows:</b> every device needs an address, like a house needs a street address. Each zone has its own street (192.168.10.x for Ticketing, 192.168.20.x for Payments and so on). Most devices get an address automatically from the Main Switch (DHCP); servers keep a fixed one.</div>
+        <h3 style="margin-top:0">Zones and their address ranges</h3>
+        <div class="tscroll"><table id="vtab"></table></div>
+        <p class="note" style="margin-top:8px">Every zone uses a /24 range, meaning 254 usable addresses. Addresses .1 to .20 are kept for fixed devices: .1 is always the zone's exit door (gateway), servers use .10 and .11, the WiFi access point uses .5. Automatic addresses start at .21. A real stadium would give fans a much larger range, or several WiFi zones; one /24 keeps this lab model simple.</p>
+        <div class="row sp"><h3 style="margin:18px 0 8px">Every device and its address</h3>
+          <div class="row"><button class="btn sm" id="renew" type="button">Show how a device gets an address</button><button class="btn sm" id="addFan" type="button">Connect a new fan phone</button></div></div>
+        <div class="tscroll"><table id="ltab"></table></div>
+        <h3>Address conversation (DHCP)</h3>
+        <div class="cons" id="dora" aria-live="polite"></div>
+      </div>
+
+      <!-- SECURITY -->
+      <div class="pane" id="pane-sec" role="tabpanel" hidden>
+        <div class="intro"><b>What this tab shows:</b> two kinds of protection. <b>Rule lists (ACLs)</b> sit at each zone's exit door and decide which messages may leave the zone. <b>Port security</b> makes each switch socket remember its device and lock itself if a stranger plugs in.</div>
+        <h3 style="margin-top:0">Who can reach whom</h3>
+        <p class="note">Read across: the row is the sender, the column is the receiver. Worked out live from the rule lists below, using pings, secure web, web and name lookups.</p>
+        <div class="tscroll"><table class="mx" id="mx"></table></div>
+
+        <div class="row sp"><h3 style="margin:18px 0 8px">Rule lists at each exit door</h3>
+          <div class="row"><label class="chk"><input type="checkbox" id="showIos"> Show Cisco commands</label><button class="btn sm" id="resetHits" type="button">Reset counters</button></div></div>
+        <p class="note">Rules are read top to bottom and the first one that matches wins. Anything that matches no rule is blocked. Replies are checked on their way back too. "Matches" counts how often each rule was used.</p>
+        <div id="acls"></div>
+
+        <h3>Socket locks (port security)</h3>
+        <div class="tscroll"><table id="ptab"></table></div>
+        <p class="note" style="margin:8px 0">Try an attack:</p>
+        <div class="sc">
+          <button class="btn" data-sc="cam" type="button">Swap a camera for a laptop<small>Cameras Switch, socket 1, sees an unknown device</small></button>
+          <button class="btn" data-sc="hub" type="button">Add a hub to a till's socket<small>Payments Switch, socket 2, sees a second device</small></button>
+          <button class="btn" data-sc="unused" type="button">Plug into an empty wall socket<small>Cameras Switch, socket 9, is switched off</small></button>
+          <button class="btn danger" data-sc="fix" type="button">Remove intruders and unlock sockets<small>What a network admin would do</small></button>
+        </div>
+        <h3>Switch event log</h3>
+        <div class="cons" id="syslog" aria-live="polite"></div>
+      </div>
+
+      <!-- FAST LANE -->
+      <div class="pane" id="pane-qos" role="tabpanel" hidden>
+        <div class="intro"><b>What this tab shows:</b> the stadium's Internet link carries 100 Mbps. When a goal is scored, thousands of fans upload at once and the link fills up. Without a fast lane the live TV feed gets stuck in the same queue and breaks up. With the fast lane (QoS) the TV feed always goes first, payments get a reserved share, and fans use what is left.</div>
+        <div class="qctl">
+          <label class="sw"><input type="checkbox" id="qosOn" checked><span class="tr"></span><span id="qosLbl">Fast lane on</span></label>
+          <label class="f">Fans using WiFi: <b id="fansLbl" class="mono" style="color:var(--ink)"></b><input type="range" id="fans" min="1000" max="40000" step="500" value="4000"></label>
+        </div>
+        <div class="chips" style="margin-top:10px" id="presets">
+          <button class="btn" data-f="4000" type="button">Before kick-off · 4,000</button>
+          <button class="btn" data-f="8000" type="button">Half-time · 8,000</button>
+          <button class="btn" data-f="40000" type="button">Goal scored · 40,000</button>
+        </div>
+        <p class="note">Each fan adds about 0.01 Mbps of traffic, so 40,000 fans want 400 Mbps: four times what the link can carry.</p>
+        <div class="row sp"><div><div class="eyebrow" style="margin:0">Live TV feed</div><span class="pill" id="sla"></span></div><span class="note">Target: delay under 30 ms, under 0.5% lost</span></div>
+        <div class="say" id="qsay"></div>
+        <h3 style="margin-top:8px">Delay (how late messages arrive)</h3>
+        <div class="lg"><span><i style="background:var(--z-prs)"></i>TV feed</span><span><i style="background:var(--z-wifi)"></i>Fan WiFi</span><span><i style="background:var(--bad)"></i>30 ms target</span></div>
+        <canvas id="cLat" aria-label="Delay over the last 30 seconds"></canvas>
+        <h3>What the Internet link carries</h3>
+        <div class="lg"><span><i style="background:var(--z-prs)"></i>TV feed</span><span><i style="background:var(--z-tkt)"></i>Tickets and payments</span><span><i style="background:var(--z-wifi)"></i>Fan WiFi</span><span><i style="background:var(--ink)"></i>What everyone wants to send</span></div>
+        <canvas id="cThr" aria-label="Internet link usage over the last 30 seconds"></canvas>
+        <h3>Each traffic group right now</h3>
+        <div class="tscroll"><table id="qtab"></table></div>
+        <h3>The fast-lane settings on the Main Switch</h3>
+        <pre class="code" id="qpol"></pre>
+      </div>
+
+      <!-- DEVICE SETUP -->
+      <div class="pane" id="pane-cfg" role="tabpanel" hidden>
+        <div class="intro"><b>What this tab shows:</b> the exact commands you would type into real Cisco equipment (or Packet Tracer) to build this network. Lines starting with <span class="mono">!</span> are plain-English notes; the device ignores them. Everything here is generated from the same data the simulator uses, so it always matches the map.</div>
+        <div class="chips" id="cfgChips"></div>
+        <div class="row sp" style="margin-bottom:8px"><b id="cfgName"></b><button class="btn sm" id="cfgCopy" type="button">Copy commands</button></div>
+        <pre class="code" id="cfgOut"></pre>
+      </div>
+
+      <!-- DESIGN -->
+      <div class="pane" id="pane-design" role="tabpanel" hidden>
+        <div class="intro"><b>What this tab shows:</b> how the network is organised, what each zone needs, and how the design changed between Review 1 and now.</div>
+        <h3 style="margin-top:0">Three layers</h3>
+        <div class="tscroll"><table>
+          <thead><tr><th>Layer</th><th>Device</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td><b>Centre</b></td><td>Main Switch</td><td>Moves messages between zones, holds every zone's exit door and rule list, hands out addresses, runs the fast lane.</td></tr>
+            <tr><td><b>Way out</b></td><td>Internet Router</td><td>Connects the stadium to the Internet and swaps private addresses for a public one (NAT).</td></tr>
+            <tr><td><b>Zones</b></td><td>Ticketing, Payments, Press &amp; TV, Cameras, Fan WiFi switches</td><td>One switch per zone. Devices plug in here. Each socket is locked to its device.</td></tr>
+            <tr><td><b>Devices</b></td><td>Gates, tills, TV encoder, cameras, WiFi access point</td><td>Get an address automatically, or a fixed one for servers.</td></tr>
+          </tbody></table></div>
+        <h3>What each zone needs</h3>
+        <div class="tscroll"><table id="req"></table></div>
+        <h3>Changes since Review 1</h3>
+        <p class="note">The Review 1 plan used the same five zones and the same addresses. While building it we improved several parts.</p>
+        <div class="tscroll"><table id="changes"></table></div>
+        <h3>Limits of this simulator</h3>
+        <p class="note">It models zones, routing between zones, automatic addresses, rule lists (including replies), socket locks and a queue model for the fast lane. It does not run real Cisco software, spanning tree or routing protocols. Delay and loss figures come from a simple model, so they show the effect rather than exact numbers. The Device setup tab lets the same design be built on real equipment.</p>
+      </div>
+
+      <!-- GUIDE -->
+      <div class="pane" id="pane-guide" role="tabpanel" hidden>
+        <div class="intro"><b>New to networking?</b> Think of the stadium as a town. Devices are houses, messages are letters, zones are separate neighbourhoods, and each neighbourhood has one exit door with a guard holding a rule list.</div>
+        <h3 style="margin-top:0">How a message travels</h3>
+        <ol class="demo">
+          <li>A device writes a message to an address.</li>
+          <li>Same zone? The zone's switch passes it straight across. No guard involved.</li>
+          <li>Different zone? It goes to the zone's exit door (gateway) on the Main Switch.</li>
+          <li>The guard reads the zone's rule list from the top. First matching rule decides: allow or block.</li>
+          <li>If allowed, the Main Switch delivers it, and the reply is checked by the other zone's guard on the way back.</li>
+        </ol>
+        <h3>Words used on this site</h3>
+        <dl class="gl" id="gloss"></dl>
+        <h3>5-minute demo for the viva</h3>
+        <ol class="demo">
+          <li><b>Map:</b> point out the five coloured zones, the Main Switch in the middle and the Internet Router at the top.</li>
+          <li><b>Addresses tab:</b> show that each zone has its own range, then press "Show how a device gets an address".</li>
+          <li><b>Test tab:</b> send Press Laptop to Ticket Server, secure web: allowed. Then Fan Phone 1 to Payment Server: blocked, and read out the rule that stopped it.</li>
+          <li><b>Security tab:</b> show the "who can reach whom" grid, then press "Swap a camera for a laptop" and show Camera 1 go offline.</li>
+          <li><b>Fast lane tab:</b> press "Goal scored", turn the fast lane off (TV feed breaks), then on again (TV feed recovers).</li>
+          <li><b>Device setup tab:</b> show that the same design is ready as Cisco commands.</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- address helpers ---------- */
+const ip2n=ip=>ip.split('.').reduce((a,o)=>a*256+(+o),0);
+const n2ip=n=>[24,16,8,0].map(s=>Math.floor(n/2**s)%256).join('.');
+const maskOf=len=>n2ip(len===0?0:2**32-2**(32-len));
+const wildOf=len=>n2ip(2**(32-len)-1);
+function inCidr(ip,c){
+  if(c==='any')return true;
+  const [b,l]=c.split('/'); const len=l===undefined?32:+l;
+  if(len===0)return true;
+  const sh=2**(32-len);
+  return Math.floor(ip2n(ip)/sh)===Math.floor(ip2n(b)/sh);
+}
+function cidrTxt(c){
+  if(c==='any')return 'any';
+  const [b,l]=c.split('/'); const len=l===undefined?32:+l;
+  if(len===32)return 'host '+b;
+  return b+' '+wildOf(len);
+}
+const hex2=n=>n.toString(16).toUpperCase().padStart(2,'0');
+
+/* ---------- zones (VLANs): addresses follow the Review 1 plan ---------- */
+const VLANS=[
+  {id:10,name:'TICKETING',label:'Ticketing',short:'Ticketing',key:'tkt',pre:'192.168.10',sw:'TICKETING-SWITCH',acl:'TICKETING_IN',col:100,desc:'Gate scanners and the ticket database'},
+  {id:20,name:'POS',label:'Payments (POS)',short:'Payments',key:'pos',pre:'192.168.20',sw:'POS-SWITCH',acl:'POS_IN',col:300,desc:'Food and drink tills taking card payments'},
+  {id:30,name:'PRESS',label:'Press & TV',short:'Press & TV',key:'prs',pre:'192.168.30',sw:'PRESS-SWITCH',acl:'PRESS_IN',col:500,desc:'Live TV encoder and journalists'},
+  {id:40,name:'CCTV',label:'Security cameras (CCTV)',short:'Cameras',key:'cctv',pre:'192.168.40',sw:'CCTV-SWITCH',acl:'CCTV_IN',col:700,desc:'Security cameras and the video recorder'},
+  {id:50,name:'WIFI',label:'Fan WiFi',short:'Fan WiFi',key:'wifi',pre:'192.168.50',sw:'WIFI-SWITCH',acl:'WIFI_IN',col:900,desc:'Spectators’ phones'}
+];
+VLANS.forEach(v=>{v.len=24;v.net=v.pre+'.0';v.cidr=v.net+'/24';v.gw=v.pre+'.1';v.mask=maskOf(24);v.first=v.pre+'.21';v.last=v.pre+'.254';v.hosts=254;v.excl=20;v.swName=v.short+' Switch';});
+const vById=Object.fromEntries(VLANS.map(v=>[v.id,v]));
+const zc=v=>`var(--z-${vById[v].key})`;
+const NAMES={'CORE-SWITCH':'Main Switch','INTERNET-ROUTER':'Internet Router'};
+VLANS.forEach(v=>NAMES[v.sw]=v.swName);
+const LINK_NET='192.168.100.0/30', CORE_LINK='192.168.100.1', ROUTER_LINK='192.168.100.2';
+
+/* ---------- devices ---------- */
+/* map layout: each zone is a column; devices are listed one per row under the zone switch */
+const ROWY={A:458,B:533,C:608}, BUS=-62, SW_Y=372, CORE_Y=250;
+let macSeq=0;
+const DEVS=[];
+function dev(id,name,type,vlan,port,ip,slot,svc,extra){
+  const v=vById[vlan];
+  const o={id,name,type,vlan,port,ip,static:!!ip,svc:svc||[],sw:v.sw,x:v.col+BUS,y:ROWY[slot],mac:`00:1B:54:${hex2(vlan)}:00:${hex2(++macSeq)}`,...extra};
+  DEVS.push(o); return o;
+}
+dev('GATE-1','Gate 1','pc',10,'Fa0/1',null,'A');
+dev('GATE-2','Gate 2','pc',10,'Fa0/2',null,'B');
+dev('TICKET-SERVER','Ticket Server','server',10,'Fa0/3','192.168.10.10','C',[443]);
+dev('TILL-1','Till 1','pos',20,'Fa0/1',null,'A');
+dev('TILL-2','Till 2','pos',20,'Fa0/2',null,'B');
+dev('PAYMENT-SERVER','Payment Server','server',20,'Fa0/3','192.168.20.10','C',[443]);
+dev('TV-ENCODER','TV Encoder','encoder',30,'Fa0/1','192.168.30.11','A');
+dev('PRESS-LAPTOP','Press Laptop','pc',30,'Fa0/2',null,'B');
+dev('MEDIA-SERVER','Media Server','server',30,'Fa0/3','192.168.30.10','C',[443,80]);
+dev('CAMERA-1','Camera 1','camera',40,'Fa0/1',null,'A');
+dev('CAMERA-2','Camera 2','camera',40,'Fa0/2',null,'B');
+dev('VIDEO-RECORDER','Video Recorder','server',40,'Fa0/3','192.168.40.10','C',[443]);
+dev('WIFI-AP','WiFi Hotspot','ap',50,'Fa0/1','192.168.50.5','A');
+dev('FAN-1','Fan Phone 1','phone',50,null,null,'B',[],{via:'WIFI-AP'});
+dev('FAN-2','Fan Phone 2','phone',50,null,null,'C',[],{via:'WIFI-AP'});
+const INET={id:'INTERNET',name:'Internet',type:'cloud',vlan:null,ip:'8.8.8.8',static:true,svc:[443,80,53],x:500,y:52,mac:'—'};
+DEVS.push(INET);
+const GWS=VLANS.map(v=>({id:'GW'+v.id,name:`${v.short} gateway`,type:'gateway',vlan:v.id,ip:v.gw,static:true,svc:[],x:v.col,y:CORE_Y+45,mac:'—'}));
+const byId=Object.fromEntries([...DEVS,...GWS].map(d=>[d.id,d]));
+const nm=id=>byId[id]?byId[id].name:(NAMES[id]||id);
+const nmIp=id=>{const d=byId[id];return d&&d.ip?`${d.name} (${d.ip})`:nm(id);};
+const sockN=p=>p?p.split('/')[1]:'';
+const sock=p=>`socket ${sockN(p)} (${p})`;
+
+/* ---------- rule lists (ACLs): one source for the simulator and the Cisco commands ---------- */
+const N={T:'192.168.10.0/24',P:'192.168.20.0/24',M:'192.168.30.0/24',C:'192.168.40.0/24',W:'192.168.50.0/24',ALL:'192.168.0.0/16'};
+const TKT_SRV='192.168.10.10/32', REC='192.168.40.10/32';
+const gwLine=v=>({a:'permit',p:'ip',s:v.cidr,d:v.gw+'/32',why:'Devices can always reach their own exit door'});
+const dhcpLine=()=>({a:'permit',p:'udp',s:'any',d:'any',sp:68,dp:67,why:'Devices can ask for an address'});
+const ACL_DEF={
+  10:[gwLine(vById[10]),dhcpLine(),
+      {a:'permit',p:'icmp',s:N.T,d:N.M,t:'echo-reply',why:'Answer pings from the press box'},
+      {a:'permit',p:'tcp',s:N.T,d:N.M,est:true,why:'Answer the press box’s accreditation checks'},
+      {a:'permit',p:'icmp',s:N.T,d:REC,t:'echo',why:'Security desk can ping the video recorder'},
+      {a:'permit',p:'tcp',s:N.T,d:REC,dp:443,why:'Security desk can watch recorded footage'},
+      {a:'deny',p:'ip',s:N.T,d:N.ALL,why:'Block everything else inside the stadium'},
+      {a:'permit',p:'ip',s:N.T,d:'any',why:'Allow the Internet'}],
+  20:[gwLine(vById[20]),dhcpLine(),
+      {a:'deny',p:'ip',s:N.P,d:N.ALL,why:'Tills cannot reach any other zone'},
+      {a:'permit',p:'tcp',s:N.P,d:'any',dp:443,why:'Tills reach the card company over secure web'},
+      {a:'permit',p:'udp',s:N.P,d:'any',dp:53,why:'Tills look up the card company’s address (DNS)'},
+      {a:'deny',p:'ip',s:'any',d:'any',log:true,why:'Block everything else and log it'}],
+  30:[gwLine(vById[30]),dhcpLine(),
+      {a:'permit',p:'icmp',s:N.M,d:TKT_SRV,t:'echo',why:'Press can ping the ticket server'},
+      {a:'permit',p:'tcp',s:N.M,d:TKT_SRV,dp:443,why:'Press checks accreditation on the ticket server'},
+      {a:'deny',p:'ip',s:N.M,d:N.ALL,why:'Block everything else inside the stadium'},
+      {a:'permit',p:'ip',s:N.M,d:'any',why:'Allow the Internet (the live TV stream goes out)'}],
+  40:[gwLine(vById[40]),dhcpLine(),
+      {a:'permit',p:'icmp',s:REC,d:N.T,t:'echo-reply',why:'Recorder answers pings from the security desk'},
+      {a:'permit',p:'tcp',s:REC,d:N.T,est:true,why:'Recorder sends footage to the security desk'},
+      {a:'deny',p:'ip',s:'any',d:'any',log:true,why:'Block everything else; cameras get no Internet'}],
+  50:[gwLine(vById[50]),dhcpLine(),
+      {a:'deny',p:'ip',s:N.W,d:N.ALL,why:'Fans cannot reach any stadium system'},
+      {a:'permit',p:'ip',s:N.W,d:'any',why:'Fans get the Internet'}]
+};
+const ACLS={};
+VLANS.forEach(v=>{ACLS[v.id]={name:v.acl,vlan:v.id,lines:ACL_DEF[v.id].map((l,i)=>({...l,n:(i+1)*10,hits:0}))}});
+function aclLine(e){
+  let t=`${e.n} ${e.a} ${e.p} ${cidrTxt(e.s)}`;
+  if(e.sp!=null)t+=` eq ${e.sp}`;
+  t+=` ${cidrTxt(e.d)}`;
+  if(e.dp!=null)t+=` eq ${e.dp}`;
+  if(e.t)t+=` ${e.t}`;
+  if(e.est)t+=' established';
+  if(e.log)t+=' log';
+  return t;
+}
+function place(c){
+  if(c==='any')return 'anywhere';
+  if(c===N.ALL)return 'any stadium zone';
+  const v=VLANS.find(v=>v.cidr===c);if(v)return `${v.short} zone`;
+  const ip=c.split('/')[0];
+  const g=VLANS.find(v=>v.gw===ip);if(g)return `${g.short} gateway (${ip})`;
+  const d=DEVS.find(d=>d.ip===ip);if(d)return `${d.name} (${ip})`;
+  return c;
+}
+function what(e){
+  if(e.sp===68&&e.dp===67)return 'address requests (DHCP)';
+  if(e.p==='ip')return 'everything';
+  if(e.p==='icmp')return e.t==='echo-reply'?'ping replies':'pings';
+  if(e.p==='tcp')return e.est?'replies to web requests':e.dp===443?'secure web (HTTPS)':e.dp===80?'web (HTTP)':'TCP';
+  if(e.p==='udp')return e.dp===53?'name lookups (DNS)':'UDP';
+  return e.p;
+}
+const plain=e=>`${e.a==='permit'?'Allow':'Block'} ${what(e)} from ${place(e.s)} to ${place(e.d)}`;
+function matchEntry(e,p){
+  if(e.p!=='ip'&&e.p!==p.proto)return false;
+  if(!inCidr(p.src,e.s)||!inCidr(p.dst,e.d))return false;
+  if(e.dp!=null&&e.dp!==p.dport)return false;
+  if(e.sp!=null&&e.sp!==p.sport)return false;
+  if(e.t&&e.t!==p.icmp)return false;
+  if(e.est&&!p.est)return false;
+  return true;
+}
+function evalAcl(acl,p,count){
+  for(const e of acl.lines){ if(matchEntry(e,p)){ if(count)e.hits++; return {e,permit:e.a==='permit'}; } }
+  return {e:null,permit:false};
+}
+
+/* ---------- map positions and cables ---------- */
+const PORTS=[];
+function addPort(sw,port,devId,max){
+  const d=devId?byId[devId]:null;
+  PORTS.push({sw,port,dev:devId,mac:d?d.mac:null,max,state:devId?'up':'admin-down',viol:0});
+}
+DEVS.forEach(d=>{ if(d.sw&&d.port&&!d.via)addPort(d.sw,d.port,d.id,(d.vlan===20||d.vlan===40||d.vlan===50)?1:2); });
+addPort('POS-SWITCH','Fa0/9',null,1);
+addPort('CCTV-SWITCH','Fa0/9',null,1);
+const portOf=d=>PORTS.find(p=>p.sw===d.sw&&p.port===d.port);
+const online=d=>{
+  if(d.type==='cloud'||d.type==='gateway')return true;
+  const h=d.via?byId[d.via]:d;
+  const p=portOf(h); return p?p.state==='up':true;
+};
+const LINKS=[];
+LINKS.push({a:'INTERNET',b:'INTERNET-ROUTER',pts:[[500,80],[500,126]]});
+LINKS.push({a:'INTERNET-ROUTER',b:'CORE-SWITCH',pts:[[500,174],[500,CORE_Y-45]]});
+VLANS.forEach(v=>LINKS.push({a:'CORE-SWITCH',b:v.sw,pts:[[v.col,CORE_Y+45],[v.col,SW_Y-21]]}));
+DEVS.forEach(d=>{
+  if(d.type==='cloud')return;
+  if(d.via){const p=byId[d.via];LINKS.push({a:p.id,b:d.id,pts:[[p.x,p.y],[d.x,d.y]],wl:true});}
+  else LINKS.push({a:d.sw,b:d.id,pts:[[d.x,SW_Y+21],[d.x,d.y]]});
+});
+const ADJ={};
+function indexLink(i){const l=LINKS[i];(ADJ[l.a]=ADJ[l.a]||[]).push({to:l.b,i,rev:false});(ADJ[l.b]=ADJ[l.b]||[]).push({to:l.a,i,rev:true});}
+LINKS.forEach((l,i)=>indexLink(i));
+function route(from,to){
+  const prev={[from]:null},q=[from];
+  while(q.length){const c=q.shift(); if(c===to)break; for(const e of ADJ[c]||[]){if(!(e.to in prev)){prev[e.to]={from:c,e};q.push(e.to);}}}
+  const nodes=[from],pts=[]; let c=to;const segs=[];
+  while(prev[c]){segs.unshift(prev[c]);c=prev[c].from;}
+  segs.forEach(s=>{const l=LINKS[s.e.i];const p=s.e.rev?[...l.pts].reverse():l.pts;if(!pts.length)pts.push(...p);else pts.push(...p.slice(1));nodes.push(s.e.to);});
+  return {nodes,pts};
+}
+
+/* ---------- automatic addresses (DHCP) ---------- */
+const POOL={};
+VLANS.forEach(v=>{POOL[v.id]={used:{}}});
+function leaseIp(d){
+  const v=vById[d.vlan],base=ip2n(v.first),max=ip2n(v.last);
+  for(let n=base;n<=max;n++){const ip=n2ip(n); if(!POOL[v.id].used[ip]){POOL[v.id].used[ip]=d.id;return ip;}}
+  return null;
+}
+DEVS.forEach(d=>{ if(d.type!=='cloud'&&d.static)POOL[d.vlan].used[d.ip]=d.id; });
+DEVS.forEach(d=>{ if(d.type!=='cloud'&&!d.static)d.ip=leaseIp(d); });
+let fanSeq=2;
+
+/* ---------- state ---------- */
+const S={sel:null,tests:0,anim:!reduce,log:[],busy:false,ios:false};
+const SYS=[];
+function stamp(){return new Date().toTimeString().slice(0,8);}
+function sys(sw,plainTxt,raw){SYS.unshift({t:stamp(),sw,plain:plainTxt,raw});if(SYS.length>40)SYS.pop();renderSys();}
+function renderSys(){
+  $('#syslog').innerHTML=SYS.length?SYS.map(e=>`<div class="sl"><span class="muted mono">${e.t}</span> <span class="who">${esc(nm(e.sw))}:</span> ${esc(e.plain)}${e.raw?`<code>${esc(e.raw)}</code>`:''}</div>`).join(''):'<div class="muted">Nothing has happened yet. Try one of the attacks above.</div>';
+}
+
+/* ---------- map drawing ---------- */
+const NS='http://www.w3.org/2000/svg';
+const ICON={
+  server:'<rect x="-11" y="-12" width="22" height="10" rx="2"/><rect x="-11" y="2" width="22" height="10" rx="2"/><path d="M-6 -7h.1M-6 7h.1"/>',
+  pc:'<rect x="-12" y="-11" width="24" height="15" rx="2"/><path d="M-6 11h12M0 4v7"/>',
+  camera:'<rect x="-12" y="-7" width="17" height="14" rx="3"/><path d="M5 -2l7 -4v12l-7 -4z"/>',
+  phone:'<rect x="-7" y="-12" width="14" height="24" rx="3"/><path d="M-2 8h4"/>',
+  ap:'<path d="M-11 -2a15 15 0 0 1 22 0M-6 3a8 8 0 0 1 12 0"/><path d="M0 8h.1"/>',
+  pos:'<rect x="-10" y="-12" width="20" height="24" rx="2"/><rect x="-6" y="-8" width="12" height="6"/><path d="M-6 3h2M-1 3h2M4 3h2M-6 7h2M-1 7h2M4 7h2"/>',
+  encoder:'<rect x="-12" y="-9" width="24" height="18" rx="2"/><circle cx="-6" cy="0" r="2.5"/><path d="M0 -3h8M0 3h8"/>'
+};
+function drawSvg(){
+  const svg=$('#svg'); let h='';
+  VLANS.forEach(v=>{
+    h+=`<g style="--zc:${zc(v.id)}"><rect class="zone" x="${v.col-96}" y="324" width="192" height="410" rx="14"/>
+      <line class="zdiv" x1="${v.col-80}" y1="662" x2="${v.col+80}" y2="662"/>
+      <text class="zt" x="${v.col}" y="692" text-anchor="middle">VLAN ${v.id} · ${esc(v.short)}</text>
+      <text class="m" x="${v.col}" y="714" text-anchor="middle" font-size="13">${v.pre}.x</text></g>`;
+  });
+  LINKS.forEach(l=>{
+    const b=byId[l.b];
+    if(b&&b.hidden)return;
+    const bad=b&&b.type!=='cloud'&&!online(b);
+    h+=`<polyline class="lk${l.wl?' wl':''}${bad?' bad':''}" points="${l.pts.map(p=>p.join(',')).join(' ')}"/>`;
+  });
+  h+=`<g class="node" data-id="INTERNET" tabindex="0" role="button" aria-label="Internet" style="--zc:var(--ink)" transform="translate(500,52)">
+    <path class="body" vector-effect="non-scaling-stroke" transform="scale(1.35)" d="M-34 12a13 13 0 0 1 2-25a17 17 0 0 1 32-4a13 13 0 0 1 12 29z"/>
+    <text x="0" y="8" text-anchor="middle" font-size="14" font-weight="600">Internet</text></g>`;
+  h+=`<g class="node" data-id="INTERNET-ROUTER" tabindex="0" role="button" aria-label="Internet Router" style="--zc:var(--ink)" transform="translate(500,150)">
+    <rect class="body" x="-110" y="-24" width="220" height="48" rx="9"/>
+    <text x="0" y="-3" text-anchor="middle" font-size="15" font-weight="600">Internet Router</text>
+    <text class="m" x="0" y="16" text-anchor="middle" font-size="12.5">${ROUTER_LINK}</text></g>`;
+  h+=`<g class="node" data-id="CORE-SWITCH" tabindex="0" role="button" aria-label="Main Switch" transform="translate(500,${CORE_Y})">
+    <rect class="core" x="-494" y="-45" width="988" height="90" rx="12"/>
+    <text x="0" y="-18" text-anchor="middle" font-size="15.5" font-weight="600">Main Switch · connects the zones, checks the rules, gives out addresses, runs the fast lane</text>
+    ${VLANS.map(v=>`<text class="m" x="${v.col-500}" y="10" text-anchor="middle" font-size="12">exit door</text><text x="${v.col-500}" y="30" text-anchor="middle" font-size="13.5" font-weight="600" style="font-family:var(--f-mono);fill:var(--z-${v.key})">${v.gw}</text>`).join('')}</g>`;
+  VLANS.forEach(v=>{
+    h+=`<g class="node" data-id="${v.sw}" tabindex="0" role="button" aria-label="${esc(v.swName)}" style="--zc:${zc(v.id)}" transform="translate(${v.col},${SW_Y})">
+      <rect class="body" x="-82" y="-21" width="164" height="42" rx="9"/>
+      <text x="0" y="5.5" text-anchor="middle" font-size="15" font-weight="600">${esc(v.swName)}</text></g>`;
+  });
+  DEVS.forEach(d=>{
+    if(d.type==='cloud'||d.hidden)return;
+    const off=!online(d), rg=d.rogue;
+    h+=`<g class="node${off?' off':''}" data-id="${d.id}" tabindex="0" role="button" aria-label="${esc(d.name)}" style="--zc:${zc(d.vlan)}" transform="translate(${d.x},${d.y})">
+      <rect class="hit" x="-30" y="-29" width="184" height="58" rx="9"/>
+      <rect class="body" x="-22" y="-22" width="44" height="44" rx="10"/>
+      <g class="ico">${ICON[d.type]}</g>
+      ${off?`<text x="0" y="9" text-anchor="middle" font-size="28" font-weight="700" style="fill:var(--bad)">✕</text>`:''}
+      <text x="34" y="-3" font-size="14" font-weight="600">${esc(d.name)}</text>
+      ${rg?`<text x="34" y="16" font-size="12" font-weight="700" style="fill:var(--bad)">${esc(rg)}</text>`:`<text class="m" x="34" y="16" font-size="12.5">${d.ip||'—'}</text>`}</g>`;
+  });
+  if(S.unused)h+=`<g transform="translate(700,640)"><rect class="rogue" x="-88" y="-12" width="176" height="24" rx="12"/><text x="0" y="4.5" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">socket 9: intruder, no signal</text></g>`;
+  const extra=DEVS.filter(d=>d.hidden).length;
+  if(extra)h+=`<g transform="translate(900,640)"><rect class="rogue" style="fill:var(--surface2);stroke:var(--z-wifi)" x="-70" y="-12" width="140" height="24" rx="12"/><text x="0" y="4.5" text-anchor="middle" font-size="12" font-weight="600">+${extra} more fan phones</text></g>`;
+  h+='<g id="burst"></g><g id="pkts"></g>';
+  svg.innerHTML=h;
+  if(S.sel){const n=$(`.node[data-id="${S.sel}"]`,svg);if(n)n.classList.add('sel');}
+}
+$('#svg').addEventListener('click',e=>{const n=e.target.closest('.node');if(n)select(n.dataset.id);});
+$('#svg').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const n=e.target.closest('.node');if(n){e.preventDefault();select(n.dataset.id);}}});
+
+function select(id){S.sel=id;$$('#svg .node').forEach(n=>n.classList.toggle('sel',n.dataset.id===id));renderInspector();}
+const vlanOfSw=id=>VLANS.find(v=>v.sw===id);
+const STATE_TXT={up:'working','err-disabled':'locked','admin-down':'switched off'};
+function renderInspector(){
+  const el=$('#inspector'),id=S.sel;
+  if(!id){el.innerHTML=`<b>Click any device on the map</b><p class="note" style="margin:4px 0 0">You will see its address, which zone it belongs to and where it is plugged in. You can then use it as the sender or receiver of a test.</p>`;return;}
+  const kv=a=>`<div class="kv">${a.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>`;
+  if(id==='CORE-SWITCH'){el.innerHTML=`<div class="row sp"><b>Main Switch</b><span class="note">A Layer 3 switch: a switch that can also route between zones</span></div>`+kv([['Exit doors','5, one per zone (192.168.10.1 to 192.168.50.1)'],['Link to Internet Router',CORE_LINK],['Jobs','routing between zones, rule lists, addresses, fast lane'],['Messages blocked so far',denyHits()]]);return;}
+  if(id==='INTERNET-ROUTER'){el.innerHTML=`<div class="row sp"><b>Internet Router</b><span class="note">The stadium’s way out to the Internet</span></div>`+kv([['Inside address',ROUTER_LINK],['Outside address','203.0.113.2'],['Jobs','swaps private addresses for one public one (NAT)']]);return;}
+  const v=vlanOfSw(id);
+  if(v){const ps=PORTS.filter(p=>p.sw===id);el.innerHTML=`<div class="row sp"><b>${esc(v.swName)}</b><span class="chip z" style="--zc:${zc(v.id)}">VLAN ${v.id} · ${esc(v.label)}</span></div>`+kv([['Zone addresses',`${v.pre}.x (${v.cidr})`],['Exit door',v.gw],['Cable to Main Switch','carries VLAN '+v.id+' (trunk)'],['Sockets',ps.map(p=>`${sockN(p.port)}: ${STATE_TXT[p.state]}`).join(', ')]]);return;}
+  const d=byId[id];
+  if(d.type==='cloud'){el.innerHTML=`<div class="row sp"><b>Internet</b><span class="note">Everything outside the stadium</span></div>`+kv([['Test address','8.8.8.8'],['Answers','pings, web, secure web, name lookups']])+`<div class="actions"><button class="btn sm" data-set="dst" data-id="INTERNET">Send a test here</button></div>`;return;}
+  const z=vById[d.vlan],on=online(d),p=d.via?null:portOf(d);
+  el.innerHTML=`<div class="row sp"><b>${esc(d.name)}</b><span class="chip z" style="--zc:${zc(d.vlan)}">VLAN ${z.id} · ${esc(z.label)}</span></div>`+kv([
+    ['Address (IP)',d.ip],['Exit door (gateway)',z.gw],['Hardware ID (MAC)',d.mac],
+    ['Plugged into',d.via?`${nm(d.via)} (wireless)`:`${z.swName}, ${sock(d.port)}`],
+    ['How it got its address',d.static?'fixed (static)':'automatic (DHCP)'],
+    ['Status',`<span style="color:var(--${on?'ok':'bad'})">${on?'online':'offline, socket '+(p?STATE_TXT[p.state]:'down')}</span>`],
+    ['Accepts',d.svc.length?d.svc.map(s=>({443:'secure web',80:'web',53:'name lookups'}[s])).join(', ')+', pings':'pings only']
+  ])+`<div class="actions"><button class="btn sm" data-set="src" data-id="${d.id}">Send a test from here</button><button class="btn sm" data-set="dst" data-id="${d.id}">Send a test here</button></div>`;
+}
+$('#inspector').addEventListener('click',e=>{
+  const b=e.target.closest('[data-set]');if(!b)return;
+  $(b.dataset.set==='src'?'#tSrc':'#tDst').value=b.dataset.id;showTab('tests');
+});
+
+/* ---------- message animation ---------- */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function animatePts(pts,color){
+  return new Promise(res=>{
+    if(!S.anim||pts.length<2)return res();
+    const layer=$('#pkts'),dot=document.createElementNS(NS,'circle');
+    dot.setAttribute('r',6);dot.setAttribute('class','pkt');dot.setAttribute('fill',color);layer.appendChild(dot);
+    const seg=[];let tot=0;
+    for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);seg.push(d);tot+=d;}
+    const dur=Math.max(250,tot/560*1000),t0=performance.now();
+    (function f(t){
+      const k=Math.min(1,(t-t0)/dur);let dist=k*tot,i=0;
+      while(i<seg.length-1&&dist>seg[i]){dist-=seg[i];i++;}
+      const a=pts[i],b=pts[i+1],r=seg[i]?dist/seg[i]:0;
+      dot.setAttribute('cx',a[0]+(b[0]-a[0])*r);dot.setAttribute('cy',a[1]+(b[1]-a[1])*r);
+      if(k<1)requestAnimationFrame(f);else{dot.remove();res();}
+    })(t0);
+  });
+}
+async function burst(x,y,text,color){
+  if(!S.anim)return;
+  const g=document.createElementNS(NS,'g');g.setAttribute('class','burst');
+  g.innerHTML=`<circle cx="${x}" cy="${y}" r="14" fill="${color}" opacity=".18"/><text x="${x}" y="${y+7}" text-anchor="middle" font-size="22" style="fill:${color}">✕</text><text x="${x}" y="${y-22}" text-anchor="middle" font-size="13" font-weight="700" style="fill:${color}">${esc(text)}</text>`;
+  $('#burst').appendChild(g);await sleep(900);g.remove();
+}
+async function playPlan(R,s,d){
+  const ok=css('--ok'),acc=css('--accent'),bad=css('--bad'),pl=R.plan;
+  if(!pl||pl.t==='none')return;
+  const end=r=>r.pts[r.pts.length-1];
+  if(pl.t==='ok'){await animatePts(route(s.id,d.id).pts,acc);await animatePts(route(d.id,s.id).pts,ok);return;}
+  if(pl.t==='gw'){const r=route(s.id,'CORE-SWITCH');await animatePts(r.pts,acc);await animatePts([...r.pts].reverse(),ok);return;}
+  if(pl.t==='core'){const r=route(s.id,'CORE-SWITCH');await animatePts(r.pts,acc);const p=end(r);await burst(p[0],p[1],pl.label,bad);return;}
+  if(pl.t==='ret'){await animatePts(route(s.id,d.id).pts,acc);const r=route(d.id,'CORE-SWITCH');await animatePts(r.pts,ok);const p=end(r);await burst(p[0],p[1],pl.label,bad);return;}
+  if(pl.t==='dead'){const r=route(s.id,pl.at);await animatePts(r.pts,acc);const p=end(r);await burst(p[0],p[1],pl.label,bad);return;}
+  if(pl.t==='end'){await animatePts(route(s.id,d.id).pts,acc);await burst(d.x,d.y,pl.label,bad);return;}
+  if(pl.t==='gwend'){const r=route(s.id,'CORE-SWITCH');await animatePts(r.pts,acc);const p=end(r);await burst(p[0],p[1],pl.label,bad);return;}
+}
+
+/* ---------- message engine ---------- */
+const PROTO={
+  icmp:{label:'Ping (are you there?)',short:'ping',p:'icmp'},
+  https:{label:'Secure web (HTTPS)',short:'secure web',p:'tcp',dp:443},
+  http:{label:'Web (HTTP)',short:'web',p:'tcp',dp:80},
+  dns:{label:'Name lookup (DNS)',short:'name lookup',p:'udp',dp:53}
+};
+function packets(src,dst,pr){
+  const P=PROTO[pr];
+  if(P.p==='icmp')return [{proto:'icmp',src,dst,icmp:'echo'},{proto:'icmp',src:dst,dst:src,icmp:'echo-reply'}];
+  const sp=pr==='dns'?51000:49152;
+  return [{proto:P.p,src,dst,sport:sp,dport:P.dp,est:false},{proto:P.p,src:dst,dst:src,sport:P.dp,dport:sp,est:P.p==='tcp'}];
+}
+function delay(kind){const r=Math.random();return +(kind==='l2'?0.3+r*.3:kind==='rt'?0.9+r*.5:18+r*6).toFixed(1);}
+function step(T,txt,cls,code){T.push({txt,cls,code});}
+function ruleStep(T,acl,f,zoneName){
+  if(!f.e){step(T,`No rule matches, so it is blocked by default.`,'x');return;}
+  const ok=f.permit;
+  step(T,`Rule ${f.e.n} matches: ${ok?'ALLOW':'BLOCK'}. “${f.e.why}”`,ok?'ok':'x',`${acl.name}: ${aclLine(f.e)}`);
+}
+function runFlow(sid,did,pr,count=true){
+  const s=byId[sid],d=byId[did],P=PROTO[pr],T=[];
+  const R={ok:false,reason:'',steps:T,plan:{t:'none'},ms:null,s:sid,d:did,pl:P.label};
+  const sv=vById[s.vlan];
+  if(!online(s)){R.reason=`${s.name} has no connection: its socket on the ${sv.swName} is locked.`;step(T,`${s.name}'s socket is locked, so nothing can be sent.`,'x');return R;}
+  if(!online(d)){
+    const h=d.via?byId[d.via]:d,p=portOf(h);
+    R.reason=`${d.name} cannot be reached: its socket on the ${vById[h.vlan].swName} (${sock(h.port)}) is ${STATE_TXT[p.state]}.`;
+    step(T,`The message reaches the ${vById[h.vlan].swName}, but ${d.name}'s socket is ${STATE_TXT[p.state]}, so there is nowhere to deliver it.`,'x');
+    R.plan={t:'dead',at:h.sw,label:'socket locked'};return R;
+  }
+  const [fw,rv]=packets(s.ip,d.ip,pr);
+  // own or another zone's exit door
+  if(d.type==='gateway'){
+    const acl=ACLS[s.vlan];
+    step(T,`${nmIp(sid)} sends a ${P.short} to ${nmIp(did)} on the Main Switch.`);
+    step(T,`The ${sv.short} rule list checks it.`);
+    const f=evalAcl(acl,fw,count);ruleStep(T,acl,f);
+    if(!f.permit){R.reason=`Blocked by the ${sv.short} rule list, rule ${f.e?f.e.n:'(default)'}: “${f.e?f.e.why:'no rule matched'}”.`;R.plan={t:'core',label:`${sv.short} rule ${f.e?f.e.n:''}`};return R;}
+    if(P.p!=='icmp'){R.reason=`The exit door only answers pings, not ${P.short}.`;step(T,`The exit door does not offer ${P.short}.`,'x');R.plan={t:'gwend',label:'not offered'};return R;}
+    step(T,`The Main Switch answers itself. Its own replies are not checked by rule lists.`,'ok');
+    R.ok=true;R.ms=delay('l2');R.reason=`${s.name} can reach ${d.name}.`;R.plan={t:'gw'};return R;
+  }
+  const listens=P.p==='icmp'||d.svc.includes(P.dp);
+  const fail=()=>{R.reason=`${d.name} received the message but does not offer ${P.short}.`;step(T,`${d.name} does not offer ${P.short}, so it refuses.`,'x');R.plan={t:'end',label:'not offered'};return R;};
+  if(d.vlan!==null&&s.vlan===d.vlan){
+    step(T,`${nmIp(sid)} and ${nmIp(did)} are both in the ${sv.short} zone (VLAN ${sv.id}).`);
+    step(T,`The ${s.via?nm(s.via)+' and the ':''}${sv.swName} pass the message straight across. Inside a zone no rules are checked.`);
+    if(!listens)return fail();
+    step(T,'Reply received.','ok');
+    R.ok=true;R.reason=`Same zone, so the switch delivers it directly. Rule lists are not involved.`;R.ms=delay('l2');R.plan={t:'ok'};return R;
+  }
+  const acl=ACLS[s.vlan],inet=d.vlan===null,dv=inet?null:vById[d.vlan];
+  step(T,`${nmIp(sid)} is in the ${sv.short} zone; ${nmIp(did)} is ${inet?'outside the stadium':'in the '+dv.short+' zone'}. Different zones, so the message goes to the ${sv.short} exit door (${sv.gw}) on the Main Switch.`);
+  step(T,`The ${sv.short} rule list checks the message, top to bottom.`);
+  const f=evalAcl(acl,fw,count);ruleStep(T,acl,f);
+  if(!f.permit){R.reason=`Stopped at the ${sv.short} exit door by rule ${f.e?f.e.n:'(default)'}: “${f.e?f.e.why:'no rule matched'}”.`;R.plan={t:'core',label:`${sv.short} rule ${f.e?f.e.n:''}`};return R;}
+  step(T,inet?'The Main Switch passes it to the Internet Router, which sends it to the Internet.':`The Main Switch passes it into the ${dv.short} zone, and the ${dv.swName} delivers it to ${d.name}.`);
+  if(!listens)return fail();
+  if(!inet){
+    const acl2=ACLS[d.vlan];
+    step(T,`${d.name} replies. The reply leaves through the ${dv.short} exit door, so the ${dv.short} rule list checks it.`);
+    const r=evalAcl(acl2,rv,count);ruleStep(T,acl2,r);
+    if(!r.permit){R.reason=`The message arrived, but the reply was stopped by the ${dv.short} rule list, rule ${r.e?r.e.n:'(default)'}.`;R.plan={t:'ret',label:`${dv.short} rule ${r.e?r.e.n:''}`};return R;}
+  }
+  step(T,'Reply received.','ok');
+  R.ok=true;R.reason=inet?`Allowed out to the Internet through the Internet Router.`:`Allowed between ${sv.short} and ${dv.short}: the rules permit both the message and the reply.`;
+  R.ms=delay(inet?'in':'rt');R.plan={t:'ok'};return R;
+}
+function aclOnly(sd,dd,pr){
+  const [fw,rv]=packets(sd.ip,dd.ip,pr);
+  if(!evalAcl(ACLS[sd.vlan],fw,false).permit)return false;
+  if(dd.vlan!==null&&!evalAcl(ACLS[dd.vlan],rv,false).permit)return false;
+  return true;
+}
+const denyHits=()=>Object.values(ACLS).reduce((a,x)=>a+x.lines.filter(l=>l.a==='deny').reduce((b,l)=>b+l.hits,0),0);
+
+/* ---------- Test tab ---------- */
+const CHECKS=[
+  ['GATE-1','TICKET-SERVER','icmp','allow','Devices in the same zone talk freely'],
+  ['FAN-1','GW50','icmp','allow','Every zone can reach its own exit door'],
+  ['FAN-1','TICKET-SERVER','icmp','block','Fans cannot reach ticketing'],
+  ['FAN-1','PAYMENT-SERVER','https','block','Fans cannot reach payments'],
+  ['FAN-1','VIDEO-RECORDER','icmp','block','Fans cannot reach the cameras'],
+  ['FAN-1','INTERNET','https','allow','Fans get the Internet'],
+  ['TILL-1','INTERNET','https','allow','Tills reach the card company'],
+  ['TILL-1','INTERNET','icmp','block','Tills may only use secure web and DNS'],
+  ['TILL-1','TICKET-SERVER','icmp','block','Payments kept apart from ticketing'],
+  ['GATE-1','TILL-1','icmp','block','Ticketing cannot poke at the tills'],
+  ['PRESS-LAPTOP','TICKET-SERVER','https','allow','Press checks accreditation'],
+  ['PRESS-LAPTOP','VIDEO-RECORDER','icmp','block','Press cannot see the cameras'],
+  ['GATE-1','VIDEO-RECORDER','https','allow','Security desk watches footage'],
+  ['CAMERA-1','INTERNET','https','block','Cameras get no Internet'],
+  ['TV-ENCODER','INTERNET','https','allow','The live TV stream goes out']
+];
+const checkRes=[];
+function fillSelects(){
+  const opts=list=>list.map(d=>`<option value="${d.id}">${esc(d.name)} (${d.ip})</option>`).join('');
+  const mk=(sel,dst)=>{
+    const cur=sel.value;let h='';
+    VLANS.forEach(v=>{h+=`<optgroup label="${esc(v.label)} zone">${opts(DEVS.filter(d=>d.vlan===v.id))}</optgroup>`;});
+    if(dst){h+=`<optgroup label="Exit doors on the Main Switch">${opts(GWS)}</optgroup><option value="INTERNET">Internet (8.8.8.8)</option>`;}
+    sel.innerHTML=h;if(cur&&sel.querySelector(`option[value="${cur}"]`))sel.value=cur;
+  };
+  mk($('#tSrc'),false);mk($('#tDst'),true);
+  if(!$('#tPro').options.length)$('#tPro').innerHTML=Object.entries(PROTO).map(([k,p])=>`<option value="${k}">${p.label}</option>`).join('');
+}
+function renderChecks(){
+  $('#checks tbody').innerHTML=CHECKS.map((c,i)=>{
+    const r=checkRes[i],act=r?(r.ok?'allow':'block'):null,pass=r&&act===c[3];
+    return `<tr class="click" data-i="${i}"><td class="mono">${i+1}</td><td><b>${esc(nm(c[0]))}</b> → <b>${esc(nm(c[1]))}</b> <span class="muted">· ${PROTO[c[2]].short}</span><br><span class="muted">${esc(c[4])}</span></td>
+      <td><span class="chip ${c[3]==='allow'?'ok':'bad'}">${c[3]==='allow'?'ALLOW':'BLOCK'}</span></td>
+      <td>${r?`<span class="chip ${r.ok?'ok':'bad'}">${r.ok?'ALLOWED':'BLOCKED'}</span>`:'<span class="muted">not run</span>'}</td>
+      <td>${r?`<span class="chip ${pass?'ok':'warn'}">${pass?'YES':'NO'}</span>`:''}</td></tr>`;
+  }).join('');
+  const done=checkRes.filter(Boolean).length,pass=CHECKS.filter((c,i)=>checkRes[i]&&(checkRes[i].ok?'allow':'block')===c[3]).length;
+  const el=$('#allSum');el.textContent=done?`${pass} of ${CHECKS.length} work as planned`:'not run yet';
+  el.className='pill '+(!done?'warn':pass===CHECKS.length?'ok':'bad');
+}
+function addLog(R){S.log.unshift(R);if(S.log.length>30)S.log.pop();S.tests++;renderLog();renderStats();}
+function renderLog(){
+  $('#log').innerHTML=S.log.map((r,i)=>`<details class="le"${i===0?' open':''}><summary><span class="chip ${r.ok?'ok':'bad'}">${r.ok?'ALLOWED':'BLOCKED'}</span><b>${esc(nm(r.s))}</b> → <b>${esc(nm(r.d))}</b><span class="muted">${esc(r.pl)}</span><span class="rtt">${r.ms?r.ms+' ms':''}</span></summary><div class="why">${esc(r.reason)}</div><ol class="steps">${r.steps.map(s=>`<li class="${s.cls||''}">${esc(s.txt)}${s.code&&S.ios?`<code>${esc(s.code)}</code>`:''}</li>`).join('')}</ol></details>`).join('')||'<p class="note">Nothing sent yet.</p>';
+}
+async function doTest(s,d,pr){
+  if(S.busy)return null;
+  S.busy=true;
+  try{const R=runFlow(s,d,pr,true);addLog(R);renderAcls();await playPlan(R,byId[s],byId[d]);return R;}
+  finally{S.busy=false;}
+}
+$('#tRun').addEventListener('click',()=>{
+  const s=$('#tSrc').value,d=$('#tDst').value;
+  if(s===d){addLog({ok:false,s,d,pl:'—',ms:null,reason:'The sender and receiver are the same device. Pick two different ones.',steps:[]});return;}
+  doTest(s,d,$('#tPro').value);
+});
+$('#checks tbody').addEventListener('click',async e=>{
+  const tr=e.target.closest('tr');if(!tr)return;
+  const i=+tr.dataset.i,c=CHECKS[i];
+  $('#tSrc').value=c[0];$('#tDst').value=c[1];$('#tPro').value=c[2];
+  const R=await doTest(c[0],c[1],c[2]);
+  if(R){checkRes[i]=R;renderChecks();}
+});
+function runAllChecks(){CHECKS.forEach((c,i)=>{checkRes[i]=runFlow(c[0],c[1],c[2],true);});renderChecks();renderAcls();renderStats();}
+$('#runAll').addEventListener('click',runAllChecks);
+
+/* ---------- Addresses tab ---------- */
+function renderAddr(){
+  $('#vtab').innerHTML=`<thead><tr><th>Zone</th><th>VLAN</th><th>Address range</th><th>Exit door (gateway)</th><th>Automatic addresses</th><th class="n">In use</th><th></th></tr></thead><tbody>`+
+  VLANS.map(v=>{
+    const leased=DEVS.filter(d=>d.vlan===v.id&&!d.static).length,cap=v.hosts-v.excl;
+    return `<tr><td><b>${esc(v.label)}</b><br><span class="muted">${esc(v.desc)}</span></td><td><span class="chip z" style="--zc:${zc(v.id)}">${v.id}</span></td><td class="mono">${v.cidr}</td><td class="mono">${v.gw}</td><td class="mono">${v.first} – ${v.last}</td><td class="n">${leased} of ${cap}</td><td style="min-width:70px"><div class="bar"><i style="width:${Math.max(2,leased/cap*100)}%;background:${zc(v.id)}"></i></div></td></tr>`;
+  }).join('')+`<tr><td><b>Link to Internet Router</b><br><span class="muted">Main Switch ↔ Internet Router</span></td><td>—</td><td class="mono">${LINK_NET}</td><td class="mono">${CORE_LINK} ↔ ${ROUTER_LINK}</td><td>fixed</td><td class="n">2 of 2</td><td></td></tr></tbody>`;
+  $('#ltab').innerHTML=`<thead><tr><th>Device</th><th>Zone</th><th>Address</th><th>Hardware ID (MAC)</th><th>How it got it</th><th>Plugged into</th></tr></thead><tbody>`+
+  DEVS.filter(d=>d.type!=='cloud').map(d=>`<tr><td><b>${esc(d.name)}</b></td><td>${esc(vById[d.vlan].short)}</td><td class="mono">${d.ip}</td><td class="mono">${d.mac}</td><td>${d.static?'<span class="chip warn">FIXED</span>':'<span class="chip ok">AUTOMATIC · 8 h</span>'}</td><td>${d.via?esc(nm(d.via))+' (wireless)':esc(vById[d.vlan].swName)+', socket '+sockN(d.port)}</td></tr>`).join('')+'</tbody>';
+}
+const DORA=[];
+function dora(who,txt,tag){DORA.push({who,txt,tag});const e=$('#dora');e.innerHTML=DORA.slice(-60).map(l=>`<div>${l.who?`<span class="who">${esc(l.who)}:</span> `:''}${esc(l.txt)}${l.tag?` <span class="chip warn">${l.tag}</span>`:''}</div>`).join('');e.scrollTop=e.scrollHeight;}
+async function showDhcp(d){
+  const v=vById[d.vlan];
+  dora(d.name,'“Is anyone there who can give me an address?”','DISCOVER');await sleep(250);
+  dora('Main Switch',`“You can have ${d.ip}. Your exit door is ${v.gw}.”`,'OFFER');await sleep(250);
+  dora(d.name,`“Yes please, I’ll take ${d.ip}.”`,'REQUEST');await sleep(250);
+  dora('Main Switch','“Confirmed. It’s yours for 8 hours.”','ACK');await sleep(200);
+}
+$('#renew').addEventListener('click',async()=>{
+  if(S.renewing)return;S.renewing=true;
+  for(const id of ['GATE-1','TILL-1','FAN-1']){await showDhcp(byId[id]);}
+  dora('','Every other automatic device goes through the same four steps.');
+  S.renewing=false;
+});
+$('#addFan').addEventListener('click',async()=>{
+  fanSeq++;const id='FAN-'+fanSeq;
+  const o={id,name:'Fan Phone '+fanSeq,type:'phone',vlan:50,port:null,ip:null,static:false,svc:[],sw:'WIFI-SWITCH',x:900+BUS,y:ROWY.C,mac:`00:1B:54:32:00:${hex2(++macSeq)}`,via:'WIFI-AP',hidden:true};
+  o.ip=leaseIp(o);
+  if(!o.ip){dora('Main Switch','The Fan WiFi address pool is full. A bigger range or a second WiFi zone would be needed.');fanSeq--;return;}
+  DEVS.splice(DEVS.length-1,0,o);byId[id]=o;
+  indexLink(LINKS.push({a:'WIFI-AP',b:id,pts:[[byId['WIFI-AP'].x,byId['WIFI-AP'].y],[o.x,o.y]],wl:true})-1);
+  fillSelects();drawSvg();renderAddr();renderStats();
+  await showDhcp(o);
+});
+
+/* ---------- Security tab ---------- */
+function renderMatrix(){
+  const reps=[[10,'GATE-1','TICKET-SERVER'],[20,'TILL-1','PAYMENT-SERVER'],[30,'PRESS-LAPTOP','MEDIA-SERVER'],[40,'CAMERA-1','VIDEO-RECORDER'],[50,'FAN-1','WIFI-AP']];
+  const dst=[...reps.map(r=>[vById[r[0]].short,r[2]]),['Internet','INTERNET']];
+  const PN={icmp:'ping',https:'secure web',http:'web',dns:'DNS'};
+  let h=`<thead><tr><th class="rh">From ↓ To →</th>${dst.map(x=>`<th>${esc(x[0])}</th>`).join('')}</tr></thead><tbody>`;
+  reps.forEach((r,ri)=>{
+    h+=`<tr><th class="rh">${esc(vById[r[0]].short)}</th>`;
+    dst.forEach((x,ci)=>{
+      if(ci===ri){h+='<td class="c l2">same zone<br>everything</td>';return;}
+      const ok=Object.keys(PROTO).filter(p=>aclOnly(byId[r[1]],byId[x[1]],p));
+      const cls=ok.length===4?'ok':ok.length===0?'bad':'warn';
+      h+=`<td class="c ${cls}">${ok.length===0?'blocked':ok.length===4?'everything':ok.map(p=>PN[p]).join('<br>')}</td>`;
+    });
+    h+='</tr>';
+  });
+  $('#mx').innerHTML=h+'</tbody>';
+}
+function renderAcls(){
+  const open=new Set($$('#acls details[open]').map(d=>d.dataset.v));
+  if(!renderAcls.init){open.add('50');renderAcls.init=true;}
+  $('#acls').innerHTML=VLANS.map(v=>{
+    const a=ACLS[v.id],tot=a.lines.reduce((x,l)=>x+l.hits,0);
+    return `<details class="acl" data-v="${v.id}"${open.has(String(v.id))?' open':''}><summary><span class="chip z" style="--zc:${zc(v.id)}">VLAN ${v.id}</span>${esc(v.label)} exit door<span class="note">${a.lines.length} rules · used ${tot} times${S.ios?' · Cisco name '+a.name:''}</span></summary>
+      <div class="tscroll" style="border:0;border-top:1px solid var(--line);border-radius:0"><table><thead><tr><th>Rule</th><th>What it does</th><th>Action</th><th class="n">Matches</th></tr></thead><tbody>${a.lines.map(l=>`<tr class="rule"><td class="mono">${l.n}</td><td><b>${esc(l.why)}</b><div class="auto">${esc(plain(l))}</div>${S.ios?`<code>${esc(aclLine(l))}</code>`:''}</td><td><span class="chip ${l.a==='permit'?'ok':'bad'}">${l.a==='permit'?'ALLOW':'BLOCK'}</span></td><td class="n">${l.hits}</td></tr>`).join('')}
+      <tr class="rule"><td class="mono">—</td><td><b>Anything not matched above</b><div class="auto">Blocked automatically (hidden last rule)</div></td><td><span class="chip bad">BLOCK</span></td><td class="n"></td></tr></tbody></table></div></details>`;
+  }).join('');
+  renderMatrix();
+}
+$('#resetHits').addEventListener('click',()=>{Object.values(ACLS).forEach(a=>a.lines.forEach(l=>l.hits=0));renderAcls();renderStats();});
+$('#showIos').addEventListener('change',e=>{S.ios=e.target.checked;renderAcls();renderLog();});
+function renderPorts(){
+  $('#ptab').innerHTML=`<thead><tr><th>Switch</th><th>Socket</th><th>Device</th><th>Allowed hardware ID</th><th class="n">Max devices</th><th>State</th><th class="n">Lockouts</th></tr></thead><tbody>`+
+  PORTS.map(p=>`<tr><td>${esc(nm(p.sw))}</td><td>${sock(p.port)}</td><td>${p.dev?esc(nm(p.dev)):'<span class="muted">empty, switched off</span>'}</td><td class="mono">${p.mac||'—'}</td><td class="n">${p.max}</td><td><span class="chip ${p.state==='up'?'ok':p.state==='err-disabled'?'bad':'warn'}">${STATE_TXT[p.state].toUpperCase()}</span></td><td class="n">${p.viol}</td></tr>`).join('')+'</tbody>';
+}
+const pt=(sw,port)=>PORTS.find(p=>p.sw===sw&&p.port===port);
+const longPort=p=>'FastEthernet0/'+sockN(p);
+function violate(sw,port,devName,mac){
+  const p=pt(sw,port),L=longPort(port),dotted=mac.toLowerCase().replace(/:/g,'').replace(/(....)(?=.)/g,'$1.');
+  p.state='err-disabled';p.viol++;
+  sys(sw,`An unknown device (hardware ID ${dotted}) appeared on socket ${sockN(port)}. That breaks the socket’s rule.`,`%PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address ${dotted} on port ${L}.`);
+  sys(sw,`Socket ${sockN(port)} locked itself.`,`%PM-4-ERR_DISABLE: psecure-violation error detected on ${port}, putting ${port} in err-disable state`);
+  sys(sw,`Socket ${sockN(port)} is now off. ${devName} is disconnected.`,`%LINK-3-UPDOWN: Interface ${L}, changed state to down`);
+}
+function scenario(k){
+  if(k==='cam'){
+    if(pt('CCTV-SWITCH','Fa0/1').state!=='up')return;
+    byId['CAMERA-1'].rogue='LAPTOP INTRUDER';violate('CCTV-SWITCH','Fa0/1','Camera 1','DE:AD:BE:EF:00:01');
+  }else if(k==='hub'){
+    if(pt('POS-SWITCH','Fa0/2').state!=='up')return;
+    byId['TILL-2'].rogue='HUB + 2nd DEVICE';
+    sys('POS-SWITCH','A second device appeared behind a hub on socket 2. Only 1 device is allowed.','');
+    violate('POS-SWITCH','Fa0/2','Till 2','DE:AD:BE:EF:00:02');
+  }else if(k==='unused'){
+    S.unused=true;
+    sys('CCTV-SWITCH','Someone plugged a laptop into socket 9. The socket is switched off by design, so the laptop gets no signal at all.','%LINK-5-CHANGED: Interface FastEthernet0/9, changed state to administratively down');
+  }else if(k==='fix'){
+    PORTS.forEach(p=>{
+      if(p.state==='err-disabled'){
+        sys(p.sw,`Admin removed the intruder and switched socket ${sockN(p.port)} off and on again.`,`${p.sw}(config)# interface ${p.port}  →  shutdown  →  no shutdown`);
+        sys(p.sw,`Socket ${sockN(p.port)} is working again.`,`%LINK-3-UPDOWN: Interface ${longPort(p.port)}, changed state to up`);
+        p.state='up';
+      }
+    });
+    if(S.unused)sys('CCTV-SWITCH','Laptop unplugged from socket 9.','');
+    DEVS.forEach(d=>delete d.rogue);S.unused=false;
+  }
+  drawSvg();renderPorts();renderStats();if(S.sel)renderInspector();
+}
+$('.sc').addEventListener('click',e=>{const b=e.target.closest('[data-sc]');if(b)scenario(b.dataset.sc);});
+
+/* ---------- fast lane (QoS) model ---------- */
+const Q={on:true,fans:4000,cap:100,h:[],last:null};
+const SLA={lat:30,loss:.005};
+const nz=()=>1+(Math.random()-.5)*.08;
+function qTick(){
+  const off={bc:24*nz(),biz:14*nz(),def:Q.fans*0.01*nz()},cap=Q.cap,base=4;
+  const queue=u=>u<.97?Math.min(60,4*u/(1-u)):180+Math.random()*20;
+  const jit=(u,q)=>u>=.97?(Math.random()-.5)*50:(Math.random()-.5)*q*.3;
+  let r;
+  if(!Q.on){
+    const tot=off.bc+off.biz+off.def,u=tot/cap,q=queue(u),lat=Math.max(base,base+q+jit(u,q)),loss=tot>cap?1-cap/tot:0,sc=Math.min(1,cap/tot);
+    r={bc:{off:off.bc,srv:off.bc*sc,lat,loss},biz:{off:off.biz,srv:off.biz*sc,lat,loss},def:{off:off.def,srv:off.def*sc,lat,loss}};
+  }else{
+    const bcS=Math.min(off.bc,30),bizS=Math.min(off.biz,cap-bcS),defCap=Math.max(1,cap-bcS-bizS),defS=Math.min(off.def,defCap),u=off.def/defCap,q=queue(u);
+    r={bc:{off:off.bc,srv:bcS,lat:base+.4+Math.random()*1.4,loss:Math.max(0,1-30/off.bc)},
+       biz:{off:off.biz,srv:bizS,lat:base+2+(u>1?3:0)+Math.random()*2,loss:Math.max(0,1-bizS/off.biz)},
+       def:{off:off.def,srv:defS,lat:Math.max(base,base+q+jit(u,q)),loss:Math.max(0,1-defS/off.def)}};
+  }
+  Q.last=r;Q.h.push(r);if(Q.h.length>60)Q.h.shift();
+  drawQos();
+}
+function setup(c){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+  if(!w)return null;
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);return {g,w,h};
+}
+function frame(g,w,h,ymax,step,unit){
+  const pad={l:52,r:12,t:10,b:20},pw=w-pad.l-pad.r,ph=h-pad.t-pad.b;
+  g.font='10px '+css('--f-mono');g.fillStyle=css('--muted');g.strokeStyle=css('--line');g.lineWidth=1;
+  g.textAlign='right';g.textBaseline='middle';
+  for(let v=0;v<=ymax;v+=step){const y=pad.t+ph*(1-v/ymax);g.beginPath();g.moveTo(pad.l,y);g.lineTo(w-pad.r,y);g.stroke();g.fillText(v+unit,pad.l-5,y);}
+  g.textAlign='center';g.textBaseline='top';
+  g.fillText('30 s ago',pad.l+20,h-pad.b+6);g.fillText('now',w-pad.r-10,h-pad.b+6);
+  return {pad,X:i=>pad.l+pw*i/59,Y:v=>pad.t+ph*(1-Math.min(v,ymax)/ymax)};
+}
+function drawQos(){
+  const hist=Q.h,n=hist.length,off=60-n;
+  const a=setup($('#cLat'));
+  if(a){
+    const {g,w,h}=a,f=frame(g,w,h,220,50,' ms');
+    const line=(k,col)=>{g.beginPath();hist.forEach((p,i)=>{const x=f.X(i+off),y=f.Y(p[k].lat);i?g.lineTo(x,y):g.moveTo(x,y);});g.strokeStyle=col;g.lineWidth=2;g.stroke();};
+    g.setLineDash([5,4]);g.strokeStyle=css('--bad');g.lineWidth=1.2;g.beginPath();g.moveTo(f.pad.l,f.Y(30));g.lineTo(w-f.pad.r,f.Y(30));g.stroke();g.setLineDash([]);
+    if(n>1){line('def',css('--z-wifi'));line('bc',css('--z-prs'));const p=hist[n-1];g.fillStyle=css('--z-prs');g.beginPath();g.arc(f.X(59),f.Y(p.bc.lat),4,0,7);g.fill();}
+  }
+  const b=setup($('#cThr'));
+  if(b){
+    const {g,w,h}=b;let mx=120;hist.forEach(p=>{mx=Math.max(mx,(p.bc.off+p.biz.off+p.def.off)*1.05);});
+    const ymax=Math.ceil(mx/50)*50,f=frame(g,w,h,ymax,ymax>300?100:50,'');
+    if(n>1){
+      let base=hist.map(()=>0);
+      [['bc','--z-prs'],['biz','--z-tkt'],['def','--z-wifi']].forEach(([k,c])=>{
+        const top=hist.map((p,i)=>base[i]+p[k].srv);
+        g.beginPath();top.forEach((v,i)=>{const x=f.X(i+off),y=f.Y(v);i?g.lineTo(x,y):g.moveTo(x,y);});
+        for(let i=n-1;i>=0;i--)g.lineTo(f.X(i+off),f.Y(base[i]));
+        g.closePath();g.fillStyle=css(c);g.globalAlpha=.8;g.fill();g.globalAlpha=1;base=top;
+      });
+      g.beginPath();hist.forEach((p,i)=>{const x=f.X(i+off),y=f.Y(p.bc.off+p.biz.off+p.def.off);i?g.lineTo(x,y):g.moveTo(x,y);});
+      g.strokeStyle=css('--ink');g.lineWidth=1.3;g.setLineDash([3,3]);g.stroke();g.setLineDash([]);
+    }
+    g.setLineDash([5,4]);g.strokeStyle=css('--bad');g.lineWidth=1.4;g.beginPath();g.moveTo(f.pad.l,f.Y(Q.cap));g.lineTo(w-f.pad.r,f.Y(Q.cap));g.stroke();g.setLineDash([]);
+    g.fillStyle=css('--bad');g.font='10px '+css('--f-mono');g.textAlign='left';g.textBaseline='bottom';g.fillText('link limit: 100 Mbps',f.pad.l+6,f.Y(Q.cap)-2);
+    g.fillStyle=css('--muted');g.textBaseline='top';g.fillText('Mbps',4,2);
+  }
+  renderQosText();
+}
+const f1=v=>v.toFixed(1),pc=v=>(v*100).toFixed(1)+'%';
+function renderQosText(){
+  const r=Q.last;if(!r)return;
+  const ok=r.bc.lat<SLA.lat&&r.bc.loss<SLA.loss;
+  const sl=$('#sla');sl.textContent=ok?`SMOOTH · ${f1(r.bc.lat)} ms delay · ${pc(r.bc.loss)} lost`:`BREAKING UP · ${f1(r.bc.lat)} ms delay · ${pc(r.bc.loss)} lost`;sl.className='pill '+(ok?'ok':'bad');
+  const tot=r.bc.off+r.biz.off+r.def.off,over=tot>Q.cap;
+  let say;
+  if(!over)say=`Everyone together wants ${f1(tot)} Mbps and the link carries 100 Mbps, so there is no queue. The fast lane has nothing to do yet. Try “Goal scored”.`;
+  else if(!Q.on)say=`Everyone together wants ${f1(tot)} Mbps but the link only carries 100. With the fast lane off, everyone waits in the same queue, so the TV feed is delayed ${f1(r.bc.lat)} ms and loses ${pc(r.bc.loss)} of its data. Turn the fast lane on.`;
+  else say=`Everyone together wants ${f1(tot)} Mbps but the link only carries 100. The fast lane sends the TV feed first (${f1(r.bc.lat)} ms, ${pc(r.bc.loss)} lost) and keeps 20% for tickets and payments. Fans share what is left, so they absorb the delay (${f1(r.def.lat)} ms) and the loss (${pc(r.def.loss)}).`;
+  $('#qsay').textContent=say;
+  $('#qtab').innerHTML=`<thead><tr><th>Group</th><th>Priority sticker</th><th>Treatment</th><th class="n">Wants</th><th class="n">Gets</th><th class="n">Delay</th><th class="n">Lost</th></tr></thead><tbody>`+
+  [['TV feed (Press & TV zone)','EF · highest',Q.on?'always first, up to 30%':'same queue as everyone','bc','--z-prs'],['Tickets and payments','AF31 · medium',Q.on?'20% reserved':'same queue as everyone','biz','--z-tkt'],['Fan WiFi','default · normal',Q.on?'whatever is left':'same queue as everyone','def','--z-wifi']].map(x=>{const c=r[x[3]];return `<tr><td><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(${x[4]});margin-right:7px"></i><b>${x[0]}</b></td><td>${x[1]}</td><td>${x[2]}</td><td class="n mono">${f1(c.off)} Mbps</td><td class="n mono">${f1(c.srv)} Mbps</td><td class="n mono">${f1(c.lat)} ms</td><td class="n mono">${pc(c.loss)}</td></tr>`;}).join('')+'</tbody>';
+  renderStats();
+}
+function setFans(v){Q.fans=+v;$('#fans').value=v;$('#fansLbl').textContent=Number(v).toLocaleString('en');$$('#presets .btn').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.f==String(v))));}
+$('#fans').addEventListener('input',e=>setFans(e.target.value));
+$('#presets').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(b)setFans(b.dataset.f);});
+$('#qosOn').addEventListener('change',e=>{Q.on=e.target.checked;$('#qosLbl').textContent=Q.on?'Fast lane on':'Fast lane off';});
+
+/* ---------- Cisco commands ---------- */
+const QOS_MARK='! --- 9. Fast lane (QoS)';
+function cfgCore(){
+  const L=['! ===== Main Switch (hostname CORE-SWITCH) =====','! Lines starting with "!" are notes. The switch ignores them.','! Written for a Catalyst 3560/3650-class switch. On a 3560, also type "mls qos" before section 9.','!','hostname CORE-SWITCH','!','! Turn on routing so the switch can move messages between zones','ip routing','!','! --- 1. Create the five zones (VLANs) ---'];
+  VLANS.forEach(v=>L.push(`vlan ${v.id}`,` name ${v.name}`));
+  L.push('!','! --- 2. Keep .1 to .20 in every zone for fixed addresses ---');
+  VLANS.forEach(v=>L.push(`ip dhcp excluded-address ${v.pre}.1 ${v.pre}.${v.excl}`));
+  L.push('!','! --- 3. Automatic address pools (DHCP), one per zone ---');
+  VLANS.forEach(v=>L.push(`ip dhcp pool ${v.name}`,` network ${v.net} ${v.mask}`,` default-router ${v.gw}`,' dns-server 8.8.8.8',' lease 0 8','!'));
+  L.push('! --- 4. Exit doors (gateways), each with its rule list ---');
+  VLANS.forEach(v=>L.push(`interface Vlan${v.id}`,` description ${v.label} exit door`,` ip address ${v.gw} ${v.mask}`,` ip access-group ${v.acl} in`,' no shutdown','!'));
+  L.push('! --- 5. Cables to the five zone switches (trunks, 802.1Q) ---');
+  VLANS.forEach((v,i)=>L.push(`interface GigabitEthernet1/0/${i+1}`,` description Cable to ${v.sw}`,' switchport trunk encapsulation dot1q',' switchport mode trunk',` switchport trunk allowed vlan ${v.id}`,' switchport nonegotiate','!'));
+  L.push('! --- 6. Cable to the Internet Router, with the fast lane applied ---','interface GigabitEthernet1/0/24',' description Cable to INTERNET-ROUTER',' no switchport',` ip address ${CORE_LINK} 255.255.255.252`,' service-policy output FAST-LANE','!',
+    '! --- 7. Anything not in the stadium goes to the Internet Router ---',`ip route 0.0.0.0 0.0.0.0 ${ROUTER_LINK}`,'!',
+    '! --- 8. Rule lists (ACLs): read top to bottom, first match wins ---');
+  VLANS.forEach(v=>{L.push(`! ${v.label} exit door`,`ip access-list extended ${v.acl}`);ACLS[v.id].lines.forEach(l=>L.push(`! ${l.why}`,' '+aclLine(l)));L.push('!');});
+  L.push(QOS_MARK+': TV first, payments reserved, fans get the rest ---',
+    '! Which traffic is which group',
+    'ip access-list extended TV-TRAFFIC',` permit ip ${cidrTxt(N.M)} any`,'ip access-list extended BUSINESS-TRAFFIC',` permit ip ${cidrTxt(N.T)} any`,` permit ip ${cidrTxt(N.P)} any`,'!',
+    'class-map match-any TV-FEED',' match access-group name TV-TRAFFIC','class-map match-any TICKETS-PAYMENTS',' match access-group name BUSINESS-TRAFFIC','!',
+    '! What each group gets on the Internet link',
+    'policy-map FAST-LANE',' class TV-FEED','  set dscp ef','  priority percent 30',' class TICKETS-PAYMENTS','  set dscp af31','  bandwidth percent 20',' class class-default','  fair-queue','!','end');
+  return L.join('\n');
+}
+function cfgAccess(v){
+  const ps=PORTS.filter(p=>p.sw===v.sw&&p.dev);
+  const L=[`! ===== ${v.swName} (hostname ${v.sw}) =====`,'! Lines starting with "!" are notes. The switch ignores them.','! Written for a Catalyst 2960-class switch.','!',`hostname ${v.sw}`,'spanning-tree mode rapid-pvst','!',
+    '! --- 1. This switch’s zone, plus a parking zone for unused sockets ---',`vlan ${v.id}`,` name ${v.name}`,'vlan 999',' name PARKING','!',
+    '! --- 2. Cable to the Main Switch (trunk) ---','interface GigabitEthernet0/1',' description Cable to CORE-SWITCH',' switchport mode trunk',` switchport trunk allowed vlan ${v.id}`,' switchport nonegotiate','!',
+    `! --- 3. Device sockets: zone ${v.id}, locked to the first device (max ${ps[0]?ps[0].max:1}) ---`];
+  ps.forEach(p=>L.push(`interface FastEthernet${p.port.slice(2)}`,` description ${p.dev}`,' switchport mode access',` switchport access vlan ${v.id}`,' switchport port-security',` switchport port-security maximum ${p.max}`,' switchport port-security mac-address sticky',' switchport port-security violation shutdown',' spanning-tree portfast',' spanning-tree bpduguard enable','!'));
+  L.push('! --- 4. Unused sockets: switched off and parked ---','interface range FastEthernet0/4 - 24',' description UNUSED',' switchport mode access',' switchport access vlan 999',' shutdown','!',
+    '! If a socket locks after an intruder: remove the device, then type','! "shutdown" and "no shutdown" on that socket.','end');
+  return L.join('\n');
+}
+function cfgEdge(){
+  return ['! ===== Internet Router (hostname INTERNET-ROUTER) =====','! Lines starting with "!" are notes. The router ignores them.','!','hostname INTERNET-ROUTER','!',
+  '! --- 1. Cable to the Main Switch (inside) ---','interface GigabitEthernet0/0',' description Cable to CORE-SWITCH',` ip address ${ROUTER_LINK} 255.255.255.252`,' ip nat inside',' no shutdown','!',
+  '! --- 2. Cable to the Internet provider (outside) ---','interface GigabitEthernet0/1',' description Internet provider',' ip address 203.0.113.2 255.255.255.252',' ip nat outside',' no shutdown','!',
+  '! --- 3. NAT: stadium addresses share the one public address ---','access-list 1 permit 192.168.0.0 0.0.255.255','ip nat inside source list 1 interface GigabitEthernet0/1 overload','!',
+  '! --- 4. Where to send things ---','ip route 0.0.0.0 0.0.0.0 203.0.113.1',`ip route 192.168.0.0 255.255.0.0 ${CORE_LINK}`,'!','end'].join('\n');
+}
+const CFG=[['Main Switch',cfgCore,'CORE-SWITCH'],['Internet Router',cfgEdge,'INTERNET-ROUTER'],...VLANS.map(v=>[v.swName,()=>cfgAccess(v),v.sw])];
+let cfgCur=0;
+function renderCfg(){
+  $('#cfgChips').innerHTML=CFG.map((c,i)=>`<button class="btn" data-i="${i}" aria-pressed="${i===cfgCur}" type="button">${esc(c[0])}</button>`).join('');
+  $('#cfgName').textContent=`${CFG[cfgCur][0]} (${CFG[cfgCur][2]})`;
+  $('#cfgOut').textContent=CFG[cfgCur][1]();
+}
+$('#cfgChips').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(b){cfgCur=+b.dataset.i;renderCfg();}});
+$('#cfgCopy').addEventListener('click',async()=>{
+  const btn=$('#cfgCopy');
+  try{await navigator.clipboard.writeText($('#cfgOut').textContent);btn.textContent='Copied';}
+  catch(_){const r=document.createRange();r.selectNodeContents($('#cfgOut'));const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Selected: press Ctrl+C';}
+  setTimeout(()=>btn.textContent='Copy commands',1800);
+});
+$('#qpol').textContent=QOS_MARK+cfgCore().split(QOS_MARK)[1].replace(/\nend$/,'');
+
+/* ---------- Design and Guide tabs ---------- */
+$('#req').innerHTML=`<thead><tr><th>Zone</th><th>What travels here</th><th>What it needs</th><th>How we provide it</th></tr></thead><tbody>`+[
+  [10,'Gate scans, ticket database','Only reachable by the press box and the zone itself','Ticketing rule list; fans and tills blocked'],
+  [20,'Card payments','Strict isolation (PCI DSS): only secure web and DNS to the card company','Payments rule list blocks every other zone; sockets allow 1 device'],
+  [30,'Live TV video','Low delay, never slowed down by fans','Fast lane: always first, up to 30%'],
+  [40,'Camera video to the recorder','No Internet, no access from other zones, tamper proof','Cameras rule list blocks everything; sockets allow 1 device; empty sockets switched off'],
+  [50,'Fans’ phones','Internet only','Fan WiFi rule list blocks every stadium system; normal priority']
+].map(r=>`<tr><td><span class="chip z" style="--zc:${zc(r[0])}">VLAN ${r[0]} · ${esc(vById[r[0]].short)}</span></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')+'</tbody>';
+$('#changes').innerHTML=`<thead><tr><th>Part</th><th>Review 1 plan</th><th>Now</th><th>Why it is better</th></tr></thead><tbody>`+[
+  ['Zones and addresses','5 VLANs, 192.168.10.0/24 to 192.168.50.0/24','Same','Kept as planned'],
+  ['Routing between zones','One router with 5 sub-interfaces on one cable (router-on-a-stick)','A Layer 3 Main Switch with one exit door per zone','Every message between zones no longer squeezes through one cable to the router; the switch routes faster and the router only handles the Internet'],
+  ['Zone switches','One or more switches','One switch per zone','A fault in one zone does not affect the others; easier to lock sockets per zone'],
+  ['Automatic addresses','DHCP on the router','DHCP on the Main Switch','The exit doors live on the Main Switch, so it is the natural place to hand out addresses'],
+  ['Rule lists','Fan WiFi blocked from Ticketing, POS, CCTV','A full rule list for every zone','Covers real needs (press accreditation, security desk footage, tills only reach the card company) and blocks everything else'],
+  ['Socket locks','POS and CCTV sockets','Every socket; strict on POS, CCTV and WiFi; empty sockets switched off','No zone is left open to a plugged-in intruder'],
+  ['Fast lane (QoS)','Not planned','TV feed first, payments reserved','Testing showed a fan surge would break the live TV feed'],
+  ['Tool','Cisco Packet Tracer','Browser simulator, plus Cisco commands ready for Packet Tracer','Shows messages, rule matches, attacks and congestion live; Packet Tracer has limited QoS support. Packet Tracer was confirmed as optional.']
+].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')+'</tbody>';
+$('#gloss').innerHTML=[
+  ['Network','Devices connected so they can send each other messages.','Here: the whole stadium system.'],
+  ['IP address','A device’s home address.','Gate 1 lives at 192.168.10.21.'],
+  ['Zone / VLAN','A separate virtual room on shared cables. Devices in different VLANs cannot talk unless the Main Switch allows it.','VLAN 20 is the Payments zone.'],
+  ['Address range (subnet)','The street all of a zone’s addresses are on. /24 means 254 usable addresses.','Payments uses 192.168.20.x.'],
+  ['Exit door (gateway)','The address a device sends to when the receiver is in another zone. Always .1 here.','Fan WiFi’s exit door is 192.168.50.1.'],
+  ['Hardware ID (MAC)','A fingerprint built into every device at the factory. It never changes.','Camera 1 is 00:1B:54:28:00:0A.'],
+  ['Switch','A power strip for data. Devices plug into its sockets.','Cameras Switch.'],
+  ['Main Switch (Layer 3 switch)','A switch that can also route messages between zones.','The wide bar in the middle of the map.'],
+  ['Router','Connects one network to another.','Internet Router connects the stadium to the Internet.'],
+  ['Trunk','One cable that carries a zone’s traffic with its VLAN number attached (802.1Q tag).','Each zone switch to the Main Switch.'],
+  ['Socket (port)','A physical plug on a switch. Fa0/1 is Cisco’s name for socket 1 (FastEthernet 0/1).','Camera 1 is on socket 1 of the Cameras Switch.'],
+  ['DHCP','The automatic address giver. Four steps: Discover, Offer, Request, Acknowledge.','Fan phones get addresses from .21 upward.'],
+  ['Fixed (static) address','An address set by hand that never changes.','Ticket Server is always 192.168.10.10.'],
+  ['Rule list (ACL)','A guard’s list at a zone’s exit door. Read top to bottom; first match wins; anything unmatched is blocked.','Fan WiFi rule 30 blocks every stadium system.'],
+  ['Ping','An “are you there?” message. The receiver answers if it can.','Used to test if two devices can reach each other.'],
+  ['HTTPS / HTTP / DNS','Secure web, normal web, and name lookup (turns a name like google.com into an address).','Tills may only use HTTPS and DNS.'],
+  ['Port security','Each socket remembers its device. A stranger makes it lock itself (err-disabled).','The camera-swap attack.'],
+  ['Fast lane (QoS)','Quality of Service: when the link is full, important traffic goes first.','TV feed first, fans last.'],
+  ['Priority sticker (DSCP)','A label on each message saying how urgent it is. EF = top, AF31 = medium, default = normal.','TV traffic is marked EF.'],
+  ['Mbps','Megabits per second: how much the link carries each second.','The Internet link carries 100 Mbps.'],
+  ['Delay (latency)','How late messages arrive, in milliseconds (ms).','The TV feed needs under 30 ms.'],
+  ['Lost (packet loss)','Messages that never arrive because the queue overflowed.','The TV feed needs under 0.5%.'],
+  ['NAT','The router swaps private stadium addresses for its one public address on the way out.','Done by the Internet Router.'],
+  ['Cisco IOS','The command language of Cisco devices.','Shown in the Device setup tab.']
+].map(g=>`<dt>${g[0]}</dt><dd>${g[1]}<small>${g[2]}</small></dd>`).join('');
+
+/* ---------- legend, header numbers, tabs, theme ---------- */
+$('#legend').innerHTML=VLANS.map(v=>`<span><i style="background:${zc(v.id)}"></i>${esc(v.short)}</span>`).join('');
+function renderStats(){
+  const hosts=DEVS.filter(d=>d.type!=='cloud'),on=hosts.filter(online).length,viol=PORTS.reduce((a,p)=>a+p.viol,0);
+  $('#stats').innerHTML=[[`${on}/${hosts.length}`,'devices online'],[denyHits(),'blocked by rules'],[viol,'intruders caught'],[Q.on?'ON':'OFF','fast lane'],[S.tests,'tests sent']]
+    .map(x=>`<div class="stat"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('');
+}
+function showTab(t){
+  $$('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===t)));
+  $$('.pane').forEach(p=>p.hidden=p.id!=='pane-'+t);
+  if(t==='qos')requestAnimationFrame(drawQos);
+}
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)showTab(b.dataset.tab);});
+$('#animToggle').checked=S.anim;
+$('#animToggle').addEventListener('change',e=>S.anim=e.target.checked);
+$('#themeBtn').addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  const t=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);
+  try{localStorage.setItem('mnc-theme',t);}catch(_){}
+  drawQos();
+});
+try{const t=localStorage.getItem('mnc-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(_){}
+window.addEventListener('resize',drawQos);
+
+/* ---------- start ---------- */
+fillSelects();
+$('#tSrc').value='FAN-1';$('#tDst').value='PAYMENT-SERVER';$('#tPro').value='https';
+drawSvg();renderInspector();
+runAllChecks();
+addLog(runFlow('FAN-1','PAYMENT-SERVER','https',true));
+renderAddr();renderAcls();renderPorts();renderSys();renderCfg();
+setFans(4000);
+dora('','Press “Show how a device gets an address” to watch the four-step conversation.');
+for(let i=0;i<30;i++)qTick();
+setInterval(qTick,500);
+renderStats();
+})();
+</script>
+
+</body></html>
