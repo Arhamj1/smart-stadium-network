@@ -3,357 +3,439 @@
 <title>Matchday Network Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* Layout: the map stays pinned on the left so messages can be watched while the right-hand tabs run tests, attacks and the crowd surge. Stacks below 1040px. */
+/* Layout: header band, then the map and the Send panel side by side (the log scrolls inside the panel so both stay in view), then the tabbed console. Stacks below 1100px. */
 :root{
-  --bg:#EDF1EF; --surface:#FFFFFF; --surface2:#F4F7F5; --ink:#12201A; --muted:#58695F; --line:#D3DCD7;
-  --accent:#0F6E5A; --accent-ink:#FFFFFF;
-  --ok:#168A4F; --ok-bg:#DDF3E6; --bad:#CF3328; --bad-bg:#FBE3E0; --warn:#A86A06; --warn-bg:#FCEFD3;
-  --z-tkt:#3A6BDB; --z-pos:#0F8F96; --z-prs:#D4880F; --z-cctv:#C2386C; --z-wifi:#7C58CF;
-  --f-display:'Barlow Condensed','Arial Narrow',sans-serif;
-  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
-  --f-mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+  --bg:#EEF1F7; --surface:#FFFFFF; --surface2:#F6F8FC; --surface3:#E8ECF5; --ink:#0F1426; --muted:#5A6382; --line:#DBE0EC; --wire:#9AA3BF;
+  --accent:#3D6B00; --accent-ink:#FFFFFF; --accent-soft:#E7F3D2;
+  --pkt:#4D7C0F; --pkt2:#0369A1; --pkt-ink:#FFFFFF;
+  --ok:#15803D; --ok-bg:#DCF5E5; --bad:#D92D2D; --bad-bg:#FDE3E3; --warn:#A16207; --warn-bg:#FCF0CF;
+  --z-tkt:#2563EB; --z-pos:#0E9488; --z-prs:#D9700B; --z-cctv:#DB2777; --z-wifi:#7C3AED;
+  --hdr:#0D1222; --hdr-ink:#F1F4FB; --hdr-muted:#9AA5C4; --hdr-line:#232B45; --hdr-accent:#C5F04A;
+  --f-display:'Space Grotesk','Segoe UI',sans-serif;
+  --f-body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0B1210; --surface:#131C19; --surface2:#19251F; --ink:#E3EDE8; --muted:#8CA196; --line:#263530;
-    --accent:#3FC9A5; --accent-ink:#06201A;
-    --ok:#4ADE97; --ok-bg:#12301F; --bad:#FF6B5E; --bad-bg:#3A1815; --warn:#F2B24A; --warn-bg:#35280D;
-    --z-tkt:#6E97F5; --z-pos:#3CC4CB; --z-prs:#F2AE3F; --z-cctv:#EE6B9C; --z-wifi:#A68AF0;
+    --bg:#080B14; --surface:#10141F; --surface2:#151A28; --surface3:#1C2233; --ink:#E9EDF8; --muted:#8C95B2; --line:#242B40; --wire:#4A5470;
+    --accent:#C5F04A; --accent-ink:#121805; --accent-soft:#232E10;
+    --pkt:#C5F04A; --pkt2:#38BDF8; --pkt-ink:#0A0D16;
+    --ok:#4ADE80; --ok-bg:#0F2C1C; --bad:#FF6B6B; --bad-bg:#3A1519; --warn:#FBBF24; --warn-bg:#34280C;
+    --z-tkt:#60A5FA; --z-pos:#2DD4BF; --z-prs:#FB923C; --z-cctv:#F472B6; --z-wifi:#A78BFA;
+    --hdr:#0B0F1C; --hdr-line:#20273D;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0B1210; --surface:#131C19; --surface2:#19251F; --ink:#E3EDE8; --muted:#8CA196; --line:#263530;
-  --accent:#3FC9A5; --accent-ink:#06201A;
-  --ok:#4ADE97; --ok-bg:#12301F; --bad:#FF6B5E; --bad-bg:#3A1815; --warn:#F2B24A; --warn-bg:#35280D;
-  --z-tkt:#6E97F5; --z-pos:#3CC4CB; --z-prs:#F2AE3F; --z-cctv:#EE6B9C; --z-wifi:#A68AF0;
+  --bg:#080B14; --surface:#10141F; --surface2:#151A28; --surface3:#1C2233; --ink:#E9EDF8; --muted:#8C95B2; --line:#242B40; --wire:#4A5470;
+  --accent:#C5F04A; --accent-ink:#121805; --accent-soft:#232E10;
+  --pkt:#C5F04A; --pkt2:#38BDF8; --pkt-ink:#0A0D16;
+  --ok:#4ADE80; --ok-bg:#0F2C1C; --bad:#FF6B6B; --bad-bg:#3A1519; --warn:#FBBF24; --warn-bg:#34280C;
+  --z-tkt:#60A5FA; --z-pos:#2DD4BF; --z-prs:#FB923C; --z-cctv:#F472B6; --z-wifi:#A78BFA;
+  --hdr:#0B0F1C; --hdr-line:#20273D;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
-.app{max-width:1500px;margin:0 auto;padding-inline:16px;padding-block:16px 40px}
-h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.01em}
-h1{font-size:34px;line-height:1.05;font-weight:700}
-h2{font-size:21px}
-h3{font-size:17px;margin-block:18px 8px}
+.wrap{max-width:1560px;margin:0 auto;padding-inline:20px}
+@media (max-width:600px){.wrap{padding-inline:16px}}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:19px}
+h3{font-size:16px;margin-block:20px 8px}
 p{margin:0 0 10px}
 .muted{color:var(--muted)}
 .mono{font-family:var(--f-mono)}
-.eyebrow{font:500 11px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.top{display:flex;gap:16px 24px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
-.brand{min-width:0;flex:1 1 320px}
-.brand p{margin:6px 0 0;color:var(--muted);max-width:62ch;font-size:14.5px}
-.stats{display:flex;flex-wrap:wrap;gap:8px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 12px;min-width:104px}
-.stat b{display:block;font:600 20px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
-.stat span{font:500 11px/1.2 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
-.btn{font:500 14px/1 var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:9px 13px;cursor:pointer}
+.eyebrow{font:600 11px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+
+/* header band */
+.hdr{background:var(--hdr);color:var(--hdr-ink);border-bottom:1px solid var(--hdr-line);margin-bottom:20px}
+.hdr-in{display:flex;gap:16px 28px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-block:20px 18px}
+.brand{display:flex;gap:16px;align-items:center;min-width:0;flex:1 1 420px}
+.mark{flex:0 0 auto;width:52px;height:52px;border-radius:14px;background:var(--hdr-accent);display:grid;place-items:center}
+.mark svg{width:34px;height:34px}
+.kicker{font:600 11px/1.3 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--hdr-accent)}
+.hdr h1{font-size:32px;line-height:1.1;font-weight:700;margin:3px 0 4px;color:var(--hdr-ink)}
+.hdr p{margin:0;color:var(--hdr-muted);font-size:14.5px;max-width:78ch}
+@media (max-width:600px){.mark{display:none}.hdr h1{font-size:26px}.brand{flex-basis:100%}}
+.hdr .btn{background:transparent;color:var(--hdr-ink);border-color:var(--hdr-line)}
+.hdr .btn:hover{border-color:var(--hdr-muted)}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--hdr-line)}
+.stat{padding:12px 18px 14px;border-left:1px solid var(--hdr-line);min-width:0}
+.stat:first-child{border-left:0;padding-left:0}
+.stat b{display:block;font:600 24px/1.15 var(--f-display);font-variant-numeric:tabular-nums;color:var(--hdr-ink)}
+.stat b.ok{color:#4ADE80}.stat b.bad{color:#FF7A7A}.stat b.hi{color:var(--hdr-accent)}
+.stat span{font:500 11px/1.3 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--hdr-muted)}
+@media (max-width:760px){.stats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}.stat{border-left:0;padding-left:0;border-top:1px solid var(--hdr-line)}.stats{border-top:0}}
+
+/* buttons and inputs */
+.btn{font:600 14px/1 var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:10px 14px;cursor:pointer}
 .btn:hover{border-color:var(--muted)}
 .btn:focus-visible,select:focus-visible,input:focus-visible,.node:focus-visible,.tab:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.primary:hover{filter:brightness(1.07)}
 .btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,var(--line))}
 .btn.sm{padding:7px 11px;font-size:13px}
-.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
-.topo{padding:14px}
-.topo-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin-bottom:8px}
-.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font:500 13px var(--f-body);color:var(--muted)}
-.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
-.chk{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
-.svgwrap{overflow-x:auto;border-radius:8px;background:var(--surface2);border:1px solid var(--line)}
+.btn.ghost{background:transparent}
+
+/* stage: map + send panel */
+.stage{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(360px,1fr);gap:20px;align-items:stretch;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;min-width:0}
+.card-h{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+.card-h .sub{margin:2px 0 0;font-size:13.5px;color:var(--muted)}
+.mapcard{padding:16px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font:500 12.5px var(--f-body);color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend .ln{display:inline-block;width:18px;height:0;border-top:2.5px solid var(--wire);margin-right:5px;vertical-align:3px}
+.legend .ln.d{border-top-style:dotted}
+.legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.legend .sep{width:1px;height:14px;background:var(--line)}
+.svgwrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line);background-color:var(--surface2);background-image:radial-gradient(color-mix(in srgb,var(--muted) 26%,transparent) 1px,transparent 1.3px);background-size:22px 22px}
 #svg{display:block;width:100%;height:auto}
-@media (max-width:700px){#svg{min-width:680px}}
+@media (max-width:760px){#svg{min-width:720px}}
+.sendcard{position:relative;min-height:560px}
+.send-in{position:absolute;inset:0;display:flex;flex-direction:column;padding:16px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+.form .wide{grid-column:1/-1}
+.form-foot{display:flex;gap:10px 14px;align-items:center;justify-content:space-between;flex-wrap:wrap;grid-column:1/-1}
+.form-foot .btn.primary{min-width:150px;padding:12px 18px;font-size:15px}
+.flash{animation:flash 1.2s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 3px transparent}}
+.log-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+.log-h h3{margin:0}
+.log{flex:1 1 auto;min-height:0;overflow:auto;padding-right:4px;scrollbar-width:thin}
+@media (max-width:1099px){.stage{grid-template-columns:minmax(0,1fr)}.sendcard{min-height:0}.send-in{position:static}.log{max-height:480px}}
+
 #svg text{font-family:var(--f-body);fill:var(--ink)}
 #svg .m{font-family:var(--f-mono);fill:var(--muted)}
-#svg .lk{stroke:var(--muted);stroke-width:2;fill:none;opacity:.75}
-#svg .hit{fill:transparent}
-#svg .node:hover .hit{fill:color-mix(in srgb,var(--zc) 12%,transparent)}
-#svg .node.sel .hit{fill:color-mix(in srgb,var(--zc) 20%,transparent)}
-#svg .zdiv{stroke:color-mix(in srgb,var(--zc) 45%,transparent);stroke-width:1}
-#svg .lk.wl{stroke-dasharray:3 4}
-#svg .lk.bad{stroke:var(--bad);stroke-dasharray:4 4;opacity:1}
-#svg .zone{fill:color-mix(in srgb,var(--zc) 9%,var(--surface));stroke:color-mix(in srgb,var(--zc) 55%,transparent);stroke-width:1.2}
-#svg .zt{font-family:var(--f-display);font-weight:700;font-size:19px;fill:var(--zc);letter-spacing:.03em}
-#svg .body{fill:var(--surface);stroke:var(--zc);stroke-width:2}
-#svg .ico{fill:none;stroke:var(--ink);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#svg .lk{stroke:var(--wire);stroke-width:2.2;fill:none;stroke-linejoin:round;stroke-linecap:round}
+#svg .lk.z{stroke:color-mix(in srgb,var(--zc) 62%,var(--wire))}
+#svg .lk.tk{stroke:var(--zc);stroke-width:3}
+#svg .lk.up{stroke-width:3}
+#svg .lk.wl{stroke-dasharray:1 6;stroke-width:2.6}
+#svg .lk.bad{stroke:var(--bad);stroke-dasharray:5 4;opacity:1}
+#svg .zone{fill:color-mix(in srgb,var(--zc) 6%,var(--surface));stroke:color-mix(in srgb,var(--zc) 38%,var(--line));stroke-width:1.2}
+#svg .zband{fill:color-mix(in srgb,var(--zc) 16%,var(--surface))}
+#svg .zt{font-family:var(--f-display);font-weight:700;font-size:15px;fill:var(--zc)}
+#svg .card{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
 #svg .node{cursor:pointer}
-#svg .node:hover .body{stroke-width:3}
-#svg .node.sel .body{stroke-width:3.5;filter:drop-shadow(0 0 5px var(--zc))}
-#svg .node.off .body{stroke:var(--bad);stroke-dasharray:4 3}
-#svg .node.off{opacity:.75}
-#svg .core{fill:var(--surface);stroke:var(--ink);stroke-width:1.8}
-#svg .pkt{stroke:var(--surface);stroke-width:1.5}
-#svg .burst text{font-weight:700}
-#svg .rogue{fill:var(--bad-bg);stroke:var(--bad);stroke-width:1.5}
-.inspector{margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface2);min-height:92px}
-.inspector .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px;margin:8px 0}
+#svg .node:hover .card{stroke:var(--zc)}
+#svg .node.sel .card{stroke:var(--zc);stroke-width:2.6}
+#svg .icoc{fill:color-mix(in srgb,var(--zc) 16%,var(--surface));stroke:var(--zc);stroke-width:1.6}
+#svg .ico{fill:none;stroke:var(--zc);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#svg .swb{fill:var(--surface);stroke:var(--zc);stroke-width:2}
+#svg .node:hover .swb,#svg .node.sel .swb{stroke-width:3}
+#svg .hub{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+#svg .node:hover .hub,#svg .node.sel .hub{stroke:var(--accent);stroke-width:2.4}
+#svg .gwc{fill:color-mix(in srgb,var(--zc) 16%,var(--surface));stroke:var(--zc);stroke-width:1.4}
+#svg .node:hover .gwc,#svg .node.sel .gwc{stroke-width:2.6}
+#svg .gwt{font-family:var(--f-mono);font-weight:600;fill:var(--zc)}
+#svg .node.off .card{stroke:var(--bad);stroke-dasharray:5 4}
+#svg .node.off .icoc{stroke:var(--bad);fill:var(--bad-bg)}
+#svg .rogue{fill:var(--bad-bg);stroke:var(--bad);stroke-width:1.4}
+#svg .trail{fill:none;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;opacity:.42}
+#svg .trail.fade{transition:opacity .7s;opacity:0}
+#svg .pk .halo{opacity:.3;transform-box:fill-box;transform-origin:center;animation:halo .7s ease-in-out infinite alternate}
+#svg .pk .pc{stroke:var(--surface);stroke-width:2.5}
+#svg .pk text,#svg .bx .ic{fill:var(--pkt-ink);font-family:var(--f-mono)}
+#svg .bx .ring{fill:none;stroke-width:3;transform-box:fill-box;transform-origin:center;animation:ring 1s ease-out forwards}
+#svg .bx .lab{fill:var(--surface)}
+@keyframes halo{from{transform:scale(.8)}to{transform:scale(1.25)}}
+@keyframes ring{from{transform:scale(.6);opacity:1}to{transform:scale(2.6);opacity:0}}
+
+.inspector{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface2);min-height:96px}
+.inspector .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px 16px;margin:10px 0}
 .kv div span{display:block;font:500 11px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .kv div b{font:500 14px var(--f-body);word-break:break-word}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
-.console{padding:0;overflow:hidden}
-.tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--surface2);scrollbar-width:thin}
-.tab{flex:0 0 auto;padding:13px 15px;font:600 18px var(--f-display);letter-spacing:.02em;color:var(--muted);background:none;border:0;border-bottom:3px solid transparent;cursor:pointer}
+
+/* console tabs */
+.console{padding:0;overflow:hidden;margin-bottom:40px}
+.tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--surface2);scrollbar-width:thin;padding:6px 8px 0;gap:2px}
+.tab{flex:0 0 auto;padding:12px 16px;font:600 15px var(--f-display);color:var(--muted);background:none;border:0;border-bottom:3px solid transparent;border-radius:10px 10px 0 0;cursor:pointer}
+.tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);background:var(--surface)}
-.pane{padding:16px}
+.pane{padding:20px}
 .pane[hidden]{display:none}
-.intro{background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:14.5px}
-.intro b{font-weight:600}
-.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
-label.f{display:flex;flex-direction:column;gap:5px;font:500 11.5px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
-select,input[type=number]{font:400 14px var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:8px 9px;width:100%;min-width:0}
+.intro{background:var(--surface2);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:11px 14px;margin-bottom:16px;font-size:14.5px;max-width:110ch}
+.intro b{font-weight:700}
+label.f{display:flex;flex-direction:column;gap:6px;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+select,input[type=number]{font:500 14px var(--f-body);color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:10px 10px;width:100%;min-width:0}
 input[type=range]{width:100%;accent-color:var(--accent)}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{font:500 11px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
-td{padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 11px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface2)}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 tr.click{cursor:pointer}
 tr.click:hover td{background:var(--surface2)}
-.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
-.tscroll table td:first-child,.tscroll table th:first-child{padding-left:10px}
-.chip{display:inline-block;font:600 11.5px/1 var(--f-mono);letter-spacing:.04em;padding:4px 7px;border-radius:5px;white-space:nowrap}
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.tscroll table td:first-child,.tscroll table th:first-child{padding-left:14px}
+.chip{display:inline-block;font:600 11.5px/1 var(--f-mono);letter-spacing:.04em;padding:5px 8px;border-radius:6px;white-space:nowrap}
 .chip.ok{background:var(--ok-bg);color:var(--ok)}
 .chip.bad{background:var(--bad-bg);color:var(--bad)}
 .chip.warn{background:var(--warn-bg);color:var(--warn)}
-.chip.z{background:color-mix(in srgb,var(--zc) 16%,var(--surface));color:var(--zc)}
-.pill{font:600 12px var(--f-mono);padding:5px 10px;border-radius:999px;display:inline-block}
+.chip.z{background:color-mix(in srgb,var(--zc) 15%,var(--surface));color:var(--zc)}
+.pill{font:600 12px var(--f-mono);padding:6px 11px;border-radius:999px;display:inline-block}
 .pill.ok{background:var(--ok-bg);color:var(--ok)}
 .pill.bad{background:var(--bad-bg);color:var(--bad)}
 .pill.warn{background:var(--warn-bg);color:var(--warn)}
 .row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
 .row.sp{justify-content:space-between}
-.le{border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:var(--surface)}
-.le summary{cursor:pointer;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:14px}
-.le .rtt{margin-left:auto;font:400 11.5px var(--f-mono);color:var(--muted)}
-.le .why{padding:0 10px 8px;font-size:14px}
-ol.steps{margin:0;padding:10px 12px 10px 30px;background:var(--surface2);border-top:1px solid var(--line);border-radius:0 0 8px 8px;font-size:13.5px}
-ol.steps li{margin:3px 0}
+.chk{font-size:13px;color:var(--muted);display:flex;gap:7px;align-items:center;cursor:pointer}
+.chk input{accent-color:var(--accent);width:15px;height:15px}
+
+/* message log */
+.le{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--surface);border-left:4px solid var(--bad)}
+.le.okk{border-left-color:var(--ok)}
+.le summary{cursor:pointer;padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:14px;list-style:none}
+.le summary::-webkit-details-marker{display:none}
+.le .rtt{margin-left:auto;font:500 11.5px var(--f-mono);color:var(--muted)}
+.le .why{padding:0 12px 10px;font-size:14px}
+.le .pl{width:100%;font-size:12.5px;color:var(--muted)}
+ol.steps{margin:0;padding:10px 14px 10px 32px;background:var(--surface2);border-top:1px solid var(--line);border-radius:0 0 12px 0;font-size:13.5px}
+ol.steps li{margin:4px 0}
 ol.steps li.x{color:var(--bad)}
 ol.steps li.ok{color:var(--ok)}
 ol.steps code,.rule code,.sl code{font:400 11px var(--f-mono);color:var(--muted);display:block;word-break:break-all}
 pre{margin:0;font:400 12.5px/1.6 var(--f-mono);white-space:pre;overflow-x:auto}
-pre.code{padding:12px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;max-height:520px;overflow:auto}
-.cons{font-size:13.5px;padding:8px 10px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;max-height:240px;overflow:auto;min-height:56px;font-size:12.5px}
-.cons div{padding:3px 0;border-bottom:1px dashed var(--line)}
+pre.code{padding:14px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;max-height:520px;overflow:auto}
+.cons{padding:10px 12px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;max-height:240px;overflow:auto;min-height:56px;font-size:12.5px}
+.cons div{padding:4px 0;border-bottom:1px dashed var(--line)}
 .cons div:last-child{border-bottom:0}
-.cons .who{font-weight:600}
-.acl{border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:var(--surface)}
-.acl>summary{padding:8px 10px;cursor:pointer;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-weight:600}
+.cons .who{font-weight:700}
+.acl{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--surface);overflow:hidden}
+.acl>summary{padding:10px 12px;cursor:pointer;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-weight:600}
 .acl table{font-size:13.5px}
 .rule .auto{color:var(--muted);font-size:12.5px}
-.mx td,.mx th{text-align:center;padding:6px 4px}
-.mx td.c{font:500 12.5px var(--f-body);border:1px solid var(--surface);border-radius:4px}
+.mx td,.mx th{text-align:center;padding:7px 5px}
+.mx td.c{font:500 12.5px var(--f-body);border:2px solid var(--surface);border-radius:6px}
 .mx td.ok{background:var(--ok-bg);color:var(--ok)}
 .mx td.bad{background:var(--bad-bg);color:var(--bad)}
 .mx td.warn{background:var(--warn-bg);color:var(--warn)}
 .mx td.l2{background:var(--surface2);color:var(--muted)}
 .mx th.rh{text-align:left}
-.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;min-width:60px}
+.bar{height:6px;border-radius:3px;background:var(--surface3);overflow:hidden;min-width:60px}
 .bar i{display:block;height:100%;background:var(--accent)}
-.sc{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
-.sc .btn{text-align:left;line-height:1.35}
-.sc .btn small{display:block;color:var(--muted);font-size:11.5px;margin-top:3px}
-canvas{display:block;width:100%;height:210px;background:var(--surface2);border:1px solid var(--line);border-radius:8px}
-.lg{display:flex;flex-wrap:wrap;gap:6px 14px;font:500 13px var(--f-body);color:var(--muted);margin:4px 0 6px}
+.sc{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.sc .btn{text-align:left;line-height:1.35;padding:12px 14px}
+.sc .btn small{display:block;color:var(--muted);font-size:12px;font-weight:500;margin-top:4px}
+canvas{display:block;width:100%;height:220px;background:var(--surface2);border:1px solid var(--line);border-radius:12px}
+.lg{display:flex;flex-wrap:wrap;gap:6px 14px;font:500 13px var(--f-body);color:var(--muted);margin:4px 0 8px}
 .lg i{display:inline-block;width:14px;height:3px;margin-right:5px;vertical-align:3px;border-radius:2px}
-.qctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end}
-.sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:600}
+.qctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;align-items:end}
+.sw{display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-weight:700}
 .sw input{position:absolute;opacity:0}
-.sw .tr{width:40px;height:22px;border-radius:11px;background:var(--line);position:relative;transition:background .15s}
-.sw .tr::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:transform .15s}
-.sw input:checked+.tr{background:var(--accent)}
-.sw input:checked+.tr::after{transform:translateX(18px)}
+.sw .tr{width:42px;height:24px;border-radius:12px;background:var(--surface3);border:1px solid var(--line);position:relative;transition:background .15s}
+.sw .tr::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:transform .15s,background .15s}
+.sw input:checked+.tr{background:var(--accent);border-color:var(--accent)}
+.sw input:checked+.tr::after{transform:translateX(18px);background:var(--accent-ink)}
 .sw input:focus-visible+.tr{outline:2px solid var(--accent);outline-offset:2px}
-.say{padding:10px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--line);margin:10px 0}
+.say{padding:11px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);margin:10px 0}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.chips .btn{padding:7px 11px;font:500 13px var(--f-body)}
+.chips .btn{padding:8px 12px;font:600 13px var(--f-body)}
 .chips .btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .note{font-size:13.5px;color:var(--muted)}
-dl.gl{display:grid;grid-template-columns:minmax(120px,180px) minmax(0,1fr);gap:0;margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-dl.gl dt,dl.gl dd{margin:0;padding:8px 10px;border-bottom:1px solid var(--line)}
-dl.gl dt{font-weight:600;background:var(--surface2)}
+dl.gl{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:0;margin:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+dl.gl dt,dl.gl dd{margin:0;padding:9px 12px;border-bottom:1px solid var(--line)}
+dl.gl dt{font-weight:700;background:var(--surface2)}
 dl.gl dd small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 @media (max-width:520px){dl.gl{grid-template-columns:minmax(0,1fr)}dl.gl dt{border-bottom:0}}
 ol.demo{padding-left:20px;margin:0}
 ol.demo li{margin:6px 0}
-@media (max-width:1040px){.grid{grid-template-columns:minmax(0,1fr)}}
-@media (min-width:1041px) and (min-height:760px){.topo{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+@media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
-<div class="app">
-  <header class="top">
-    <div class="brand">
-      <div class="eyebrow">Smart football stadium · segmented network</div>
-      <h1>Matchday Network Console</h1>
-      <p>Five groups share one stadium network. Each gets its own zone, rules decide who may talk to whom, the TV feed gets a fast lane, and sockets lock out strangers.</p>
+<header class="hdr">
+  <div class="wrap">
+    <div class="hdr-in">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"><svg viewBox="0 0 34 34" fill="none" stroke="#121805" stroke-width="2.2" stroke-linecap="round"><ellipse cx="17" cy="17" rx="14" ry="9"/><ellipse cx="17" cy="17" rx="6" ry="3.6"/><path d="M17 8v18M3 17h8M23 17h8"/></svg></div>
+        <div>
+          <div class="kicker">Smart Football Stadium · BCSE308P Computer Networks Lab</div>
+          <h1>Matchday Network Console</h1>
+          <p>A segmented, QoS-aware stadium network. Five zones share one network, rules decide who may talk to whom, the TV feed gets a fast lane, and every socket locks out strangers.</p>
+        </div>
+      </div>
+      <button class="btn" id="themeBtn" type="button">Switch theme</button>
     </div>
     <div class="stats" id="stats" aria-live="polite"></div>
-    <button class="btn" id="themeBtn" type="button">Switch theme</button>
-  </header>
+  </div>
+</header>
 
-  <main class="grid">
-    <section class="card topo" aria-label="Network map">
-      <div class="topo-head">
-        <h2>Network map</h2>
+<main class="wrap">
+  <div class="stage" id="stage">
+    <section class="card mapcard" id="mapcard" aria-label="Network map">
+      <div class="card-h">
+        <div><h2>Network map</h2><p class="sub">Click any device, switch or exit door to see its details.</p></div>
         <div class="legend" id="legend"></div>
-        <label class="chk"><input type="checkbox" id="animToggle" checked> Animate messages</label>
       </div>
-      <div class="svgwrap"><svg id="svg" viewBox="0 0 1000 742" role="img" aria-label="Stadium network map: Internet, Internet Router, Main Switch, five zone switches and their devices"></svg></div>
+      <div class="svgwrap"><svg id="svg" viewBox="0 0 1000 712" role="img" aria-label="Stadium network map: Internet, Internet Router, Main Switch with five exit doors, five zone switches and their devices"></svg></div>
       <div class="inspector" id="inspector"></div>
     </section>
 
-    <section class="card console" aria-label="Console">
-      <div class="tabs" role="tablist" id="tabs">
-        <button class="tab" role="tab" data-tab="tests" aria-selected="true">Test</button>
-        <button class="tab" role="tab" data-tab="addr" aria-selected="false">Addresses</button>
-        <button class="tab" role="tab" data-tab="sec" aria-selected="false">Security</button>
-        <button class="tab" role="tab" data-tab="qos" aria-selected="false">Fast lane</button>
-        <button class="tab" role="tab" data-tab="cfg" aria-selected="false">Device setup</button>
-        <button class="tab" role="tab" data-tab="design" aria-selected="false">Design</button>
-        <button class="tab" role="tab" data-tab="guide" aria-selected="false">Guide</button>
-      </div>
-
-      <!-- TEST -->
-      <div class="pane" id="pane-tests" role="tabpanel">
-        <div class="intro"><b>What this tab does:</b> pick a sender, a receiver and a type of message, then press Send. The message moves across the map. If a rule stops it you see a red ✕, and the log below explains which rule did it and why.</div>
-        <div class="form">
+    <section class="card sendcard" id="sendcard" aria-label="Send a message">
+      <div class="send-in">
+        <div class="card-h" style="margin-bottom:14px"><div><h2>Send a message</h2><p class="sub">Pick a sender, a receiver and a type of message. It travels across the map and the log explains what happened.</p></div></div>
+        <div class="form" id="sendform">
           <label class="f">From<select id="tSrc"></select></label>
           <label class="f">To<select id="tDst"></select></label>
-          <label class="f">Message type<select id="tPro"></select></label>
-          <button class="btn primary" id="tRun" type="button">Send</button>
+          <label class="f wide">Message type<select id="tPro"></select></label>
+          <div class="form-foot">
+            <label class="chk"><input type="checkbox" id="animToggle" checked> Animate on the map</label>
+            <button class="btn primary" id="tRun" type="button">Send message</button>
+          </div>
         </div>
-        <div class="row sp" style="margin-top:18px">
-          <h3 style="margin:0">Planned tests</h3>
-          <div class="row"><span class="pill" id="allSum"></span><button class="btn sm" id="runAll" type="button">Run all tests</button></div>
-        </div>
-        <p class="note" style="margin-top:6px">Each row is something our design promises. "Plan says" is what should happen, "Result" is what the simulator did. Click a row to watch it on the map.</p>
-        <div class="tscroll"><table id="checks"><thead><tr><th>#</th><th>Test</th><th>Plan says</th><th>Result</th><th>Match?</th></tr></thead><tbody></tbody></table></div>
-        <h3>Message log</h3>
-        <div id="log"></div>
-      </div>
-
-      <!-- ADDRESSES -->
-      <div class="pane" id="pane-addr" role="tabpanel" hidden>
-        <div class="intro"><b>What this tab shows:</b> every device needs an address, like a house needs a street address. Each zone has its own street (192.168.10.x for Ticketing, 192.168.20.x for Payments and so on). Most devices get an address automatically from the Main Switch (DHCP); servers keep a fixed one.</div>
-        <h3 style="margin-top:0">Zones and their address ranges</h3>
-        <div class="tscroll"><table id="vtab"></table></div>
-        <p class="note" style="margin-top:8px">Every zone uses a /24 range, meaning 254 usable addresses. Addresses .1 to .20 are kept for fixed devices: .1 is always the zone's exit door (gateway), servers use .10 and .11, the WiFi access point uses .5. Automatic addresses start at .21. A real stadium would give fans a much larger range, or several WiFi zones; one /24 keeps this lab model simple.</p>
-        <div class="row sp"><h3 style="margin:18px 0 8px">Every device and its address</h3>
-          <div class="row"><button class="btn sm" id="renew" type="button">Show how a device gets an address</button><button class="btn sm" id="addFan" type="button">Connect a new fan phone</button></div></div>
-        <div class="tscroll"><table id="ltab"></table></div>
-        <h3>Address conversation (DHCP)</h3>
-        <div class="cons" id="dora" aria-live="polite"></div>
-      </div>
-
-      <!-- SECURITY -->
-      <div class="pane" id="pane-sec" role="tabpanel" hidden>
-        <div class="intro"><b>What this tab shows:</b> two kinds of protection. <b>Rule lists (ACLs)</b> sit at each zone's exit door and decide which messages may leave the zone. <b>Port security</b> makes each switch socket remember its device and lock itself if a stranger plugs in.</div>
-        <h3 style="margin-top:0">Who can reach whom</h3>
-        <p class="note">Read across: the row is the sender, the column is the receiver. Worked out live from the rule lists below, using pings, secure web, web and name lookups.</p>
-        <div class="tscroll"><table class="mx" id="mx"></table></div>
-
-        <div class="row sp"><h3 style="margin:18px 0 8px">Rule lists at each exit door</h3>
-          <div class="row"><label class="chk"><input type="checkbox" id="showIos"> Show Cisco commands</label><button class="btn sm" id="resetHits" type="button">Reset counters</button></div></div>
-        <p class="note">Rules are read top to bottom and the first one that matches wins. Anything that matches no rule is blocked. Replies are checked on their way back too. "Matches" counts how often each rule was used.</p>
-        <div id="acls"></div>
-
-        <h3>Socket locks (port security)</h3>
-        <div class="tscroll"><table id="ptab"></table></div>
-        <p class="note" style="margin:8px 0">Try an attack:</p>
-        <div class="sc">
-          <button class="btn" data-sc="cam" type="button">Swap a camera for a laptop<small>Cameras Switch, socket 1, sees an unknown device</small></button>
-          <button class="btn" data-sc="hub" type="button">Add a hub to a till's socket<small>Payments Switch, socket 2, sees a second device</small></button>
-          <button class="btn" data-sc="unused" type="button">Plug into an empty wall socket<small>Cameras Switch, socket 9, is switched off</small></button>
-          <button class="btn danger" data-sc="fix" type="button">Remove intruders and unlock sockets<small>What a network admin would do</small></button>
-        </div>
-        <h3>Switch event log</h3>
-        <div class="cons" id="syslog" aria-live="polite"></div>
-      </div>
-
-      <!-- FAST LANE -->
-      <div class="pane" id="pane-qos" role="tabpanel" hidden>
-        <div class="intro"><b>What this tab shows:</b> the stadium's Internet link carries 100 Mbps. When a goal is scored, thousands of fans upload at once and the link fills up. Without a fast lane the live TV feed gets stuck in the same queue and breaks up. With the fast lane (QoS) the TV feed always goes first, payments get a reserved share, and fans use what is left.</div>
-        <div class="qctl">
-          <label class="sw"><input type="checkbox" id="qosOn" checked><span class="tr"></span><span id="qosLbl">Fast lane on</span></label>
-          <label class="f">Fans using WiFi: <b id="fansLbl" class="mono" style="color:var(--ink)"></b><input type="range" id="fans" min="1000" max="40000" step="500" value="4000"></label>
-        </div>
-        <div class="chips" style="margin-top:10px" id="presets">
-          <button class="btn" data-f="4000" type="button">Before kick-off · 4,000</button>
-          <button class="btn" data-f="8000" type="button">Half-time · 8,000</button>
-          <button class="btn" data-f="40000" type="button">Goal scored · 40,000</button>
-        </div>
-        <p class="note">Each fan adds about 0.01 Mbps of traffic, so 40,000 fans want 400 Mbps: four times what the link can carry.</p>
-        <div class="row sp"><div><div class="eyebrow" style="margin:0">Live TV feed</div><span class="pill" id="sla"></span></div><span class="note">Target: delay under 30 ms, under 0.5% lost</span></div>
-        <div class="say" id="qsay"></div>
-        <h3 style="margin-top:8px">Delay (how late messages arrive)</h3>
-        <div class="lg"><span><i style="background:var(--z-prs)"></i>TV feed</span><span><i style="background:var(--z-wifi)"></i>Fan WiFi</span><span><i style="background:var(--bad)"></i>30 ms target</span></div>
-        <canvas id="cLat" aria-label="Delay over the last 30 seconds"></canvas>
-        <h3>What the Internet link carries</h3>
-        <div class="lg"><span><i style="background:var(--z-prs)"></i>TV feed</span><span><i style="background:var(--z-tkt)"></i>Tickets and payments</span><span><i style="background:var(--z-wifi)"></i>Fan WiFi</span><span><i style="background:var(--ink)"></i>What everyone wants to send</span></div>
-        <canvas id="cThr" aria-label="Internet link usage over the last 30 seconds"></canvas>
-        <h3>Each traffic group right now</h3>
-        <div class="tscroll"><table id="qtab"></table></div>
-        <h3>The fast-lane settings on the Main Switch</h3>
-        <pre class="code" id="qpol"></pre>
-      </div>
-
-      <!-- DEVICE SETUP -->
-      <div class="pane" id="pane-cfg" role="tabpanel" hidden>
-        <div class="intro"><b>What this tab shows:</b> the exact commands you would type into real Cisco equipment (or Packet Tracer) to build this network. Lines starting with <span class="mono">!</span> are plain-English notes; the device ignores them. Everything here is generated from the same data the simulator uses, so it always matches the map.</div>
-        <div class="chips" id="cfgChips"></div>
-        <div class="row sp" style="margin-bottom:8px"><b id="cfgName"></b><button class="btn sm" id="cfgCopy" type="button">Copy commands</button></div>
-        <pre class="code" id="cfgOut"></pre>
-      </div>
-
-      <!-- DESIGN -->
-      <div class="pane" id="pane-design" role="tabpanel" hidden>
-        <div class="intro"><b>What this tab shows:</b> how the network is organised, what each zone needs, and how the design changed between Review 1 and now.</div>
-        <h3 style="margin-top:0">Three layers</h3>
-        <div class="tscroll"><table>
-          <thead><tr><th>Layer</th><th>Device</th><th>Job</th></tr></thead>
-          <tbody>
-            <tr><td><b>Centre</b></td><td>Main Switch</td><td>Moves messages between zones, holds every zone's exit door and rule list, hands out addresses, runs the fast lane.</td></tr>
-            <tr><td><b>Way out</b></td><td>Internet Router</td><td>Connects the stadium to the Internet and swaps private addresses for a public one (NAT).</td></tr>
-            <tr><td><b>Zones</b></td><td>Ticketing, Payments, Press &amp; TV, Cameras, Fan WiFi switches</td><td>One switch per zone. Devices plug in here. Each socket is locked to its device.</td></tr>
-            <tr><td><b>Devices</b></td><td>Gates, tills, TV encoder, cameras, WiFi access point</td><td>Get an address automatically, or a fixed one for servers.</td></tr>
-          </tbody></table></div>
-        <h3>What each zone needs</h3>
-        <div class="tscroll"><table id="req"></table></div>
-        <h3>Changes since Review 1</h3>
-        <p class="note">The Review 1 plan used the same five zones and the same addresses. While building it we improved several parts.</p>
-        <div class="tscroll"><table id="changes"></table></div>
-        <h3>Limits of this simulator</h3>
-        <p class="note">It models zones, routing between zones, automatic addresses, rule lists (including replies), socket locks and a queue model for the fast lane. It does not run real Cisco software, spanning tree or routing protocols. Delay and loss figures come from a simple model, so they show the effect rather than exact numbers. The Device setup tab lets the same design be built on real equipment.</p>
-      </div>
-
-      <!-- GUIDE -->
-      <div class="pane" id="pane-guide" role="tabpanel" hidden>
-        <div class="intro"><b>New to networking?</b> Think of the stadium as a town. Devices are houses, messages are letters, zones are separate neighbourhoods, and each neighbourhood has one exit door with a guard holding a rule list.</div>
-        <h3 style="margin-top:0">How a message travels</h3>
-        <ol class="demo">
-          <li>A device writes a message to an address.</li>
-          <li>Same zone? The zone's switch passes it straight across. No guard involved.</li>
-          <li>Different zone? It goes to the zone's exit door (gateway) on the Main Switch.</li>
-          <li>The guard reads the zone's rule list from the top. First matching rule decides: allow or block.</li>
-          <li>If allowed, the Main Switch delivers it, and the reply is checked by the other zone's guard on the way back.</li>
-        </ol>
-        <h3>Words used on this site</h3>
-        <dl class="gl" id="gloss"></dl>
-        <h3>5-minute demo for the viva</h3>
-        <ol class="demo">
-          <li><b>Map:</b> point out the five coloured zones, the Main Switch in the middle and the Internet Router at the top.</li>
-          <li><b>Addresses tab:</b> show that each zone has its own range, then press "Show how a device gets an address".</li>
-          <li><b>Test tab:</b> send Press Laptop to Ticket Server, secure web: allowed. Then Fan Phone 1 to Payment Server: blocked, and read out the rule that stopped it.</li>
-          <li><b>Security tab:</b> show the "who can reach whom" grid, then press "Swap a camera for a laptop" and show Camera 1 go offline.</li>
-          <li><b>Fast lane tab:</b> press "Goal scored", turn the fast lane off (TV feed breaks), then on again (TV feed recovers).</li>
-          <li><b>Device setup tab:</b> show that the same design is ready as Cisco commands.</li>
-        </ol>
+        <div class="log-h"><h3>Message log</h3><button class="btn sm ghost" id="clearLog" type="button">Clear</button></div>
+        <div class="log" id="log" aria-live="polite"></div>
       </div>
     </section>
-  </main>
-</div>
+  </div>
+
+  <section class="card console" aria-label="Console">
+    <div class="tabs" role="tablist" id="tabs">
+      <button class="tab" role="tab" data-tab="tests" aria-selected="true">Planned tests</button>
+      <button class="tab" role="tab" data-tab="addr" aria-selected="false">Addresses</button>
+      <button class="tab" role="tab" data-tab="sec" aria-selected="false">Security</button>
+      <button class="tab" role="tab" data-tab="qos" aria-selected="false">Fast lane</button>
+      <button class="tab" role="tab" data-tab="cfg" aria-selected="false">Device setup</button>
+      <button class="tab" role="tab" data-tab="design" aria-selected="false">Design</button>
+      <button class="tab" role="tab" data-tab="guide" aria-selected="false">Guide</button>
+    </div>
+
+    <!-- PLANNED TESTS -->
+    <div class="pane" id="pane-tests" role="tabpanel">
+      <div class="intro"><b>What this tab shows:</b> the 15 promises our design makes. "Plan says" is what should happen, "Result" is what the simulator actually did. Click any row to watch that test travel on the map, or press Run all tests.</div>
+      <div class="row sp" style="margin-bottom:10px">
+        <h3 style="margin:0">Planned tests</h3>
+        <div class="row"><span class="pill" id="allSum"></span><button class="btn sm" id="runAll" type="button">Run all tests</button></div>
+      </div>
+      <div class="tscroll"><table id="checks"><thead><tr><th>#</th><th>Test</th><th>Plan says</th><th>Result</th><th>Match?</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <!-- ADDRESSES -->
+    <div class="pane" id="pane-addr" role="tabpanel" hidden>
+      <div class="intro"><b>What this tab shows:</b> every device needs an address, like a house needs a street address. Each zone has its own street (192.168.10.x for Ticketing, 192.168.20.x for Payments and so on). Most devices get an address automatically from the Main Switch (DHCP); servers keep a fixed one.</div>
+      <h3 style="margin-top:0">Zones and their address ranges</h3>
+      <div class="tscroll"><table id="vtab"></table></div>
+      <p class="note" style="margin-top:8px">Every zone uses a /24 range, meaning 254 usable addresses. Addresses .1 to .20 are kept for fixed devices: .1 is always the zone's exit door (gateway), servers use .10 and .11, the WiFi access point uses .5. Automatic addresses start at .21. A real stadium would give fans a much larger range, or several WiFi zones; one /24 keeps this lab model simple.</p>
+      <div class="row sp"><h3 style="margin:18px 0 8px">Every device and its address</h3>
+        <div class="row"><button class="btn sm" id="renew" type="button">Show how a device gets an address</button><button class="btn sm" id="addFan" type="button">Connect a new fan phone</button></div></div>
+      <div class="tscroll"><table id="ltab"></table></div>
+      <h3>Address conversation (DHCP)</h3>
+      <div class="cons" id="dora" aria-live="polite"></div>
+    </div>
+
+    <!-- SECURITY -->
+    <div class="pane" id="pane-sec" role="tabpanel" hidden>
+      <div class="intro"><b>What this tab shows:</b> two kinds of protection. <b>Rule lists (ACLs)</b> sit at each zone's exit door and decide which messages may leave the zone. <b>Port security</b> makes each switch socket remember its device and lock itself if a stranger plugs in.</div>
+      <h3 style="margin-top:0">Who can reach whom</h3>
+      <p class="note">Read across: the row is the sender, the column is the receiver. Worked out live from the rule lists below, using pings, secure web, web and name lookups.</p>
+      <div class="tscroll"><table class="mx" id="mx"></table></div>
+
+      <div class="row sp"><h3 style="margin:18px 0 8px">Rule lists at each exit door</h3>
+        <div class="row"><label class="chk"><input type="checkbox" id="showIos"> Show Cisco commands</label><button class="btn sm" id="resetHits" type="button">Reset counters</button></div></div>
+      <p class="note">Rules are read top to bottom and the first one that matches wins. Anything that matches no rule is blocked. Replies are checked on their way back too. "Matches" counts how often each rule was used.</p>
+      <div id="acls"></div>
+
+      <h3>Socket locks (port security)</h3>
+      <div class="tscroll"><table id="ptab"></table></div>
+      <p class="note" style="margin:8px 0">Try an attack:</p>
+      <div class="sc">
+        <button class="btn" data-sc="cam" type="button">Swap a camera for a laptop<small>Cameras Switch, socket 1, sees an unknown device</small></button>
+        <button class="btn" data-sc="hub" type="button">Add a hub to a till's socket<small>Payments Switch, socket 2, sees a second device</small></button>
+        <button class="btn" data-sc="unused" type="button">Plug into an empty wall socket<small>Cameras Switch, socket 9, is switched off</small></button>
+        <button class="btn danger" data-sc="fix" type="button">Remove intruders and unlock sockets<small>What a network admin would do</small></button>
+      </div>
+      <h3>Switch event log</h3>
+      <div class="cons" id="syslog" aria-live="polite"></div>
+    </div>
+
+    <!-- FAST LANE -->
+    <div class="pane" id="pane-qos" role="tabpanel" hidden>
+      <div class="intro"><b>What this tab shows:</b> the stadium's Internet link carries 100 Mbps. When a goal is scored, thousands of fans upload at once and the link fills up. Without a fast lane the live TV feed gets stuck in the same queue and breaks up. With the fast lane (QoS) the TV feed always goes first, payments get a reserved share, and fans use what is left.</div>
+      <div class="qctl">
+        <label class="sw"><input type="checkbox" id="qosOn" checked><span class="tr"></span><span id="qosLbl">Fast lane on</span></label>
+        <label class="f">Fans using WiFi: <b id="fansLbl" class="mono" style="color:var(--ink)"></b><input type="range" id="fans" min="1000" max="40000" step="500" value="4000"></label>
+      </div>
+      <div class="chips" style="margin-top:10px" id="presets">
+        <button class="btn" data-f="4000" type="button">Before kick-off · 4,000</button>
+        <button class="btn" data-f="8000" type="button">Half-time · 8,000</button>
+        <button class="btn" data-f="40000" type="button">Goal scored · 40,000</button>
+      </div>
+      <p class="note">Each fan adds about 0.01 Mbps of traffic, so 40,000 fans want 400 Mbps: four times what the link can carry.</p>
+      <div class="row sp"><div><div class="eyebrow" style="margin:0">Live TV feed</div><span class="pill" id="sla"></span></div><span class="note">Target: delay under 30 ms, under 0.5% lost</span></div>
+      <div class="say" id="qsay"></div>
+      <h3 style="margin-top:8px">Delay (how late messages arrive)</h3>
+      <div class="lg"><span><i style="background:var(--z-prs)"></i>TV feed</span><span><i style="background:var(--z-wifi)"></i>Fan WiFi</span><span><i style="background:var(--bad)"></i>30 ms target</span></div>
+      <canvas id="cLat" aria-label="Delay over the last 30 seconds"></canvas>
+      <h3>What the Internet link carries</h3>
+      <div class="lg"><span><i style="background:var(--z-prs)"></i>TV feed</span><span><i style="background:var(--z-tkt)"></i>Tickets and payments</span><span><i style="background:var(--z-wifi)"></i>Fan WiFi</span><span><i style="background:var(--ink)"></i>What everyone wants to send</span></div>
+      <canvas id="cThr" aria-label="Internet link usage over the last 30 seconds"></canvas>
+      <h3>Each traffic group right now</h3>
+      <div class="tscroll"><table id="qtab"></table></div>
+      <h3>The fast-lane settings on the Main Switch</h3>
+      <pre class="code" id="qpol"></pre>
+    </div>
+
+    <!-- DEVICE SETUP -->
+    <div class="pane" id="pane-cfg" role="tabpanel" hidden>
+      <div class="intro"><b>What this tab shows:</b> the exact commands you would type into real Cisco equipment (or Packet Tracer) to build this network. Lines starting with <span class="mono">!</span> are plain-English notes; the device ignores them. Everything here is generated from the same data the simulator uses, so it always matches the map.</div>
+      <div class="chips" id="cfgChips"></div>
+      <div class="row sp" style="margin-bottom:8px"><b id="cfgName"></b><button class="btn sm" id="cfgCopy" type="button">Copy commands</button></div>
+      <pre class="code" id="cfgOut"></pre>
+    </div>
+
+    <!-- DESIGN -->
+    <div class="pane" id="pane-design" role="tabpanel" hidden>
+      <div class="intro"><b>What this tab shows:</b> how the network is organised, what each zone needs, and how the design changed between Review 1 and now.</div>
+      <h3 style="margin-top:0">Three layers</h3>
+      <div class="tscroll"><table>
+        <thead><tr><th>Layer</th><th>Device</th><th>Job</th></tr></thead>
+        <tbody>
+          <tr><td><b>Centre</b></td><td>Main Switch</td><td>Moves messages between zones, holds every zone's exit door and rule list, hands out addresses, runs the fast lane.</td></tr>
+          <tr><td><b>Way out</b></td><td>Internet Router</td><td>Connects the stadium to the Internet and swaps private addresses for a public one (NAT).</td></tr>
+          <tr><td><b>Zones</b></td><td>Ticketing, Payments, Press &amp; TV, Cameras, Fan WiFi switches</td><td>One switch per zone. Devices plug in here. Each socket is locked to its device.</td></tr>
+          <tr><td><b>Devices</b></td><td>Gates, tills, TV encoder, cameras, WiFi access point</td><td>Get an address automatically, or a fixed one for servers.</td></tr>
+        </tbody></table></div>
+      <h3>What each zone needs</h3>
+      <div class="tscroll"><table id="req"></table></div>
+      <h3>Changes since Review 1</h3>
+      <p class="note">The Review 1 plan used the same five zones and the same addresses. While building it we improved several parts.</p>
+      <div class="tscroll"><table id="changes"></table></div>
+      <h3>Limits of this simulator</h3>
+      <p class="note">It models zones, routing between zones, automatic addresses, rule lists (including replies), socket locks and a queue model for the fast lane. It does not run real Cisco software, spanning tree or routing protocols. Delay and loss figures come from a simple model, so they show the effect rather than exact numbers. The Device setup tab lets the same design be built on real equipment.</p>
+    </div>
+
+    <!-- GUIDE -->
+    <div class="pane" id="pane-guide" role="tabpanel" hidden>
+      <div class="intro"><b>New to networking?</b> Think of the stadium as a town. Devices are houses, messages are letters, zones are separate neighbourhoods, and each neighbourhood has one exit door with a guard holding a rule list.</div>
+      <h3 style="margin-top:0">How a message travels</h3>
+      <ol class="demo">
+        <li>A device writes a message to an address.</li>
+        <li>Same zone? The zone's switch passes it straight across. No guard involved.</li>
+        <li>Different zone? It goes to the zone's exit door (gateway) on the Main Switch.</li>
+        <li>The guard reads the zone's rule list from the top. First matching rule decides: allow or block.</li>
+        <li>If allowed, the Main Switch delivers it, and the reply is checked by the other zone's guard on the way back.</li>
+      </ol>
+      <h3>Words used on this site</h3>
+      <dl class="gl" id="gloss"></dl>
+      <h3>5-minute demo for the viva</h3>
+      <ol class="demo">
+        <li><b>Map:</b> point out the five coloured zones, the Main Switch in the middle and the Internet Router at the top.</li>
+        <li><b>Addresses tab:</b> show that each zone has its own range, then press "Show how a device gets an address".</li>
+        <li><b>Send a message panel</b> (next to the map): send Press Laptop to Ticket Server, secure web: allowed. Then Fan Phone 1 to Payment Server: blocked, and read out the rule that stopped it.</li>
+          <li><b>Planned tests tab:</b> press Run all tests and show that all 15 match the plan.</li>
+        <li><b>Security tab:</b> show the "who can reach whom" grid, then press "Swap a camera for a laptop" and show Camera 1 go offline.</li>
+        <li><b>Fast lane tab:</b> press "Goal scored", turn the fast lane off (TV feed breaks), then on again (TV feed recovers).</li>
+        <li><b>Device setup tab:</b> show that the same design is ready as Cisco commands.</li>
+      </ol>
+    </div>
+  </section>
+</main>
 
 <script>
 (()=>{
@@ -399,13 +481,13 @@ VLANS.forEach(v=>NAMES[v.sw]=v.swName);
 const LINK_NET='192.168.100.0/30', CORE_LINK='192.168.100.1', ROUTER_LINK='192.168.100.2';
 
 /* ---------- devices ---------- */
-/* map layout: each zone is a column; devices are listed one per row under the zone switch */
-const ROWY={A:458,B:533,C:608}, BUS=-62, SW_Y=372, CORE_Y=250;
+/* map layout: each zone is a column; devices hang off a cable spine on the left of the column */
+const ROWY={A:436,B:510,C:584}, SPINE=-78, ICO=-46, SW_Y=360, CORE_Y=210, PORT_Y=234, ROUTER_Y=112, INET_Y=44;
 let macSeq=0;
 const DEVS=[];
 function dev(id,name,type,vlan,port,ip,slot,svc,extra){
   const v=vById[vlan];
-  const o={id,name,type,vlan,port,ip,static:!!ip,svc:svc||[],sw:v.sw,x:v.col+BUS,y:ROWY[slot],mac:`00:1B:54:${hex2(vlan)}:00:${hex2(++macSeq)}`,...extra};
+  const o={id,name,type,vlan,port,ip,static:!!ip,svc:svc||[],sw:v.sw,x:v.col+ICO,y:ROWY[slot],mac:`00:1B:54:${hex2(vlan)}:00:${hex2(++macSeq)}`,...extra};
   DEVS.push(o); return o;
 }
 dev('GATE-1','Gate 1','pc',10,'Fa0/1',null,'A');
@@ -423,9 +505,9 @@ dev('VIDEO-RECORDER','Video Recorder','server',40,'Fa0/3','192.168.40.10','C',[4
 dev('WIFI-AP','WiFi Hotspot','ap',50,'Fa0/1','192.168.50.5','A');
 dev('FAN-1','Fan Phone 1','phone',50,null,null,'B',[],{via:'WIFI-AP'});
 dev('FAN-2','Fan Phone 2','phone',50,null,null,'C',[],{via:'WIFI-AP'});
-const INET={id:'INTERNET',name:'Internet',type:'cloud',vlan:null,ip:'8.8.8.8',static:true,svc:[443,80,53],x:500,y:52,mac:'—'};
+const INET={id:'INTERNET',name:'Internet',type:'cloud',vlan:null,ip:'8.8.8.8',static:true,svc:[443,80,53],x:500,y:INET_Y,mac:'—'};
 DEVS.push(INET);
-const GWS=VLANS.map(v=>({id:'GW'+v.id,name:`${v.short} gateway`,type:'gateway',vlan:v.id,ip:v.gw,static:true,svc:[],x:v.col,y:CORE_Y+45,mac:'—'}));
+const GWS=VLANS.map((v,i)=>({id:'GW'+v.id,name:`${v.short} gateway`,type:'gateway',vlan:v.id,ip:v.gw,static:true,svc:[],x:500+(i-2)*90,y:PORT_Y,mac:'—'}));
 const byId=Object.fromEntries([...DEVS,...GWS].map(d=>[d.id,d]));
 const nm=id=>byId[id]?byId[id].name:(NAMES[id]||id);
 const nmIp=id=>{const d=byId[id];return d&&d.ip?`${d.name} (${d.ip})`:nm(id);};
@@ -522,15 +604,33 @@ const online=d=>{
   const h=d.via?byId[d.via]:d;
   const p=portOf(h); return p?p.state==='up':true;
 };
+/* every cable runs from node centre to node centre, so a message always stays on a line;
+   nodes are drawn on top of the cables and hide the inner ends */
+function rp(P,r=10){
+  const out=[P[0]];
+  for(let i=1;i<P.length-1;i++){
+    const [ax,ay]=P[i-1],[bx,by]=P[i],[cx,cy]=P[i+1];
+    const d1=Math.hypot(bx-ax,by-ay),d2=Math.hypot(cx-bx,cy-by),k=Math.min(r,d1/2,d2/2);
+    if(k<1){out.push(P[i]);continue;}
+    const p1=[bx-(bx-ax)/d1*k,by-(by-ay)/d1*k],p2=[bx+(cx-bx)/d2*k,by+(cy-by)/d2*k];
+    for(let t=0;t<=6;t++){const q=t/6,u=1-q;out.push([+(u*u*p1[0]+2*u*q*bx+q*q*p2[0]).toFixed(1),+(u*u*p1[1]+2*u*q*by+q*q*p2[1]).toFixed(1)]);}
+  }
+  out.push(P[P.length-1]);return out;
+}
+function devLink(d){
+  const v=vById[d.vlan],sx=v.col+SPINE;
+  if(d.via){const p=byId[d.via];return {a:p.id,b:d.id,wl:true,z:d.vlan,pts:rp([[p.x,p.y],[sx,p.y],[sx,d.y],[d.x,d.y]])};}
+  return {a:d.sw,b:d.id,z:d.vlan,pts:rp([[sx,SW_Y],[sx,d.y],[d.x,d.y]])};
+}
 const LINKS=[];
-LINKS.push({a:'INTERNET',b:'INTERNET-ROUTER',pts:[[500,80],[500,126]]});
-LINKS.push({a:'INTERNET-ROUTER',b:'CORE-SWITCH',pts:[[500,174],[500,CORE_Y-45]]});
-VLANS.forEach(v=>LINKS.push({a:'CORE-SWITCH',b:v.sw,pts:[[v.col,CORE_Y+45],[v.col,SW_Y-21]]}));
-DEVS.forEach(d=>{
-  if(d.type==='cloud')return;
-  if(d.via){const p=byId[d.via];LINKS.push({a:p.id,b:d.id,pts:[[p.x,p.y],[d.x,d.y]],wl:true});}
-  else LINKS.push({a:d.sw,b:d.id,pts:[[d.x,SW_Y+21],[d.x,d.y]]});
+LINKS.push({a:'INTERNET',b:'INTERNET-ROUTER',up:true,pts:[[500,INET_Y],[500,ROUTER_Y]]});
+LINKS.push({a:'INTERNET-ROUTER',b:'CORE-SWITCH',up:true,pts:[[500,ROUTER_Y],[500,CORE_Y]]});
+GWS.forEach((g,i)=>{
+  const v=vById[g.vlan],sx=v.col+SPINE,bend=Math.abs(i-2)===2?262:284;
+  LINKS.push({a:'CORE-SWITCH',b:g.id,inner:true,pts:g.x===500?[[500,CORE_Y],[500,PORT_Y]]:rp([[500,CORE_Y],[g.x,CORE_Y],[g.x,PORT_Y]],8)});
+  LINKS.push({a:g.id,b:v.sw,tk:true,z:v.id,pts:rp([[g.x,PORT_Y],[g.x,bend],[sx,bend],[sx,SW_Y]])});
 });
+DEVS.forEach(d=>{if(d.type!=='cloud')LINKS.push(devLink(d));});
 const ADJ={};
 function indexLink(i){const l=LINKS[i];(ADJ[l.a]=ADJ[l.a]||[]).push({to:l.b,i,rev:false});(ADJ[l.b]=ADJ[l.b]||[]).push({to:l.a,i,rev:true});}
 LINKS.forEach((l,i)=>indexLink(i));
@@ -573,53 +673,76 @@ const ICON={
   phone:'<rect x="-7" y="-12" width="14" height="24" rx="3"/><path d="M-2 8h4"/>',
   ap:'<path d="M-11 -2a15 15 0 0 1 22 0M-6 3a8 8 0 0 1 12 0"/><path d="M0 8h.1"/>',
   pos:'<rect x="-10" y="-12" width="20" height="24" rx="2"/><rect x="-6" y="-8" width="12" height="6"/><path d="M-6 3h2M-1 3h2M4 3h2M-6 7h2M-1 7h2M4 7h2"/>',
-  encoder:'<rect x="-12" y="-9" width="24" height="18" rx="2"/><circle cx="-6" cy="0" r="2.5"/><path d="M0 -3h8M0 3h8"/>'
+  encoder:'<rect x="-12" y="-9" width="24" height="18" rx="2"/><circle cx="-6" cy="0" r="2.5"/><path d="M0 -3h8M0 3h8"/>',
+  switch:'<rect x="-11" y="-7" width="22" height="14" rx="2.5"/><path d="M-6 -1h12M3 -4l3 3-3 3M6 3"/><path d="M-7 2.5h.1M-3 2.5h.1M1 2.5h.1"/>',
+  router:'<circle r="11"/><path d="M-6 -3h12M3 -6l3 3-3 3M6 3h-12M-3 0l-3 3 3 3"/>'
 };
+const pts2s=p=>p.map(q=>q.join(',')).join(' ');
 function drawSvg(){
   const svg=$('#svg'); let h='';
+  // zone columns
   VLANS.forEach(v=>{
-    h+=`<g style="--zc:${zc(v.id)}"><rect class="zone" x="${v.col-96}" y="324" width="192" height="410" rx="14"/>
-      <line class="zdiv" x1="${v.col-80}" y1="662" x2="${v.col+80}" y2="662"/>
-      <text class="zt" x="${v.col}" y="692" text-anchor="middle">VLAN ${v.id} · ${esc(v.short)}</text>
-      <text class="m" x="${v.col}" y="714" text-anchor="middle" font-size="13">${v.pre}.x</text></g>`;
+    const x=v.col-92;
+    h+=`<g style="--zc:${zc(v.id)}"><rect class="zone" x="${x}" y="316" width="184" height="386" rx="16"/>
+      <path class="zband" d="M${x} 652h184v34a16 16 0 0 1-16 16h-152a16 16 0 0 1-16-16z"/>
+      <text class="zt" x="${v.col}" y="674" text-anchor="middle">VLAN ${v.id} · ${esc(v.short)}</text>
+      <text class="m" x="${v.col}" y="692" text-anchor="middle" font-size="11.5">${v.cidr}</text></g>`;
   });
-  LINKS.forEach(l=>{
-    const b=byId[l.b];
-    if(b&&b.hidden)return;
-    const bad=b&&b.type!=='cloud'&&!online(b);
-    h+=`<polyline class="lk${l.wl?' wl':''}${bad?' bad':''}" points="${l.pts.map(p=>p.join(',')).join(' ')}"/>`;
+  // cables: broken ones first so a shared spine stays normal
+  const vis=LINKS.filter(l=>!l.inner&&!(byId[l.b]&&byId[l.b].hidden));
+  const isBad=l=>{const b=byId[l.b];return b&&b.type!=='cloud'&&b.type!=='gateway'&&!online(b);};
+  [...vis.filter(isBad),...vis.filter(l=>!isBad(l))].forEach(l=>{
+    const cls=['lk'];if(l.z)cls.push('z');if(l.tk)cls.push('tk');if(l.up)cls.push('up');if(l.wl)cls.push('wl');if(isBad(l))cls.push('bad');
+    h+=`<polyline class="${cls.join(' ')}"${l.z?` style="--zc:${zc(l.z)}"`:''} points="${pts2s(l.pts)}"/>`;
   });
-  h+=`<g class="node" data-id="INTERNET" tabindex="0" role="button" aria-label="Internet" style="--zc:var(--ink)" transform="translate(500,52)">
-    <path class="body" vector-effect="non-scaling-stroke" transform="scale(1.35)" d="M-34 12a13 13 0 0 1 2-25a17 17 0 0 1 32-4a13 13 0 0 1 12 29z"/>
-    <text x="0" y="8" text-anchor="middle" font-size="14" font-weight="600">Internet</text></g>`;
-  h+=`<g class="node" data-id="INTERNET-ROUTER" tabindex="0" role="button" aria-label="Internet Router" style="--zc:var(--ink)" transform="translate(500,150)">
-    <rect class="body" x="-110" y="-24" width="220" height="48" rx="9"/>
-    <text x="0" y="-3" text-anchor="middle" font-size="15" font-weight="600">Internet Router</text>
-    <text class="m" x="0" y="16" text-anchor="middle" font-size="12.5">${ROUTER_LINK}</text></g>`;
+  h+=`<text class="m" x="510" y="${ROUTER_Y+36}" font-size="10.5">${LINK_NET}</text>`;
+  h+='<g id="trails"></g>';
+  // Internet
+  h+=`<g class="node" data-id="INTERNET" tabindex="0" role="button" aria-label="Internet" style="--zc:var(--ink)" transform="translate(500,${INET_Y})">
+    <path class="hub" d="M-46 18h92a17 17 0 0 0 2-34a23 23 0 0 0-42-13a19 19 0 0 0-35 7a17 17 0 0 0-17 40z"/>
+    <text x="0" y="8" text-anchor="middle" font-size="14" font-weight="700">Internet</text></g>`;
+  // Internet Router
+  h+=`<g class="node" data-id="INTERNET-ROUTER" tabindex="0" role="button" aria-label="Internet Router" style="--zc:var(--ink)" transform="translate(500,${ROUTER_Y})">
+    <rect class="hub" x="-104" y="-23" width="208" height="46" rx="12"/>
+    <g class="ico" style="stroke:var(--ink)" transform="translate(-78,0) scale(.85)">${ICON.router}</g>
+    <text x="-58" y="-3" font-size="14" font-weight="700">Internet Router</text>
+    <text class="m" x="-58" y="13" font-size="11">${ROUTER_LINK} · NAT</text></g>`;
+  // Main Switch with one exit door per zone
   h+=`<g class="node" data-id="CORE-SWITCH" tabindex="0" role="button" aria-label="Main Switch" transform="translate(500,${CORE_Y})">
-    <rect class="core" x="-494" y="-45" width="988" height="90" rx="12"/>
-    <text x="0" y="-18" text-anchor="middle" font-size="15.5" font-weight="600">Main Switch · connects the zones, checks the rules, gives out addresses, runs the fast lane</text>
-    ${VLANS.map(v=>`<text class="m" x="${v.col-500}" y="10" text-anchor="middle" font-size="12">exit door</text><text x="${v.col-500}" y="30" text-anchor="middle" font-size="13.5" font-weight="600" style="font-family:var(--f-mono);fill:var(--z-${v.key})">${v.gw}</text>`).join('')}</g>`;
+    <rect class="hub" x="-232" y="-52" width="464" height="98" rx="14"/>
+    <text x="-214" y="-28" font-size="15" font-weight="700">Main Switch</text>
+    <text class="m" x="-214" y="-12" font-size="10.5">Layer 3 switch</text>
+    <text class="m" x="214" y="-28" text-anchor="end" font-size="10.5">routes between zones · checks rules</text>
+    <text class="m" x="214" y="-12" text-anchor="end" font-size="10.5">gives addresses · fast lane</text></g>
+    <g class="bus"><polyline class="lk up" points="500,${CORE_Y-52} 500,${CORE_Y}"/>${LINKS.filter(l=>l.inner).map(l=>`<polyline class="lk up" points="${pts2s(l.pts)}"/>`).join('')}<circle cx="500" cy="${CORE_Y}" r="4" style="fill:var(--wire)"/></g>`;
+  GWS.forEach(g=>{
+    h+=`<g class="node" data-id="${g.id}" tabindex="0" role="button" aria-label="${esc(g.name)} ${g.ip}" style="--zc:${zc(g.vlan)}" transform="translate(${g.x},${g.y})">
+      <rect class="gwc" x="-42" y="-11" width="84" height="22" rx="7"/>
+      <text class="gwt" x="0" y="4" text-anchor="middle" font-size="10.5">${g.ip}</text></g>`;
+  });
+  // zone switches
   VLANS.forEach(v=>{
     h+=`<g class="node" data-id="${v.sw}" tabindex="0" role="button" aria-label="${esc(v.swName)}" style="--zc:${zc(v.id)}" transform="translate(${v.col},${SW_Y})">
-      <rect class="body" x="-82" y="-21" width="164" height="42" rx="9"/>
-      <text x="0" y="5.5" text-anchor="middle" font-size="15" font-weight="600">${esc(v.swName)}</text></g>`;
+      <rect class="swb" x="-88" y="-20" width="176" height="40" rx="11"/>
+      <line class="lk tk" x1="${SPINE}" y1="-20" x2="${SPINE}" y2="20"/><circle cx="${SPINE}" r="4" style="fill:var(--zc)"/>
+      <g class="ico" transform="translate(-58,0) scale(.8)">${ICON.switch}</g>
+      <text x="-42" y="5" font-size="13" font-weight="700">${esc(v.swName)}</text></g>`;
   });
+  // devices
   DEVS.forEach(d=>{
     if(d.type==='cloud'||d.hidden)return;
     const off=!online(d), rg=d.rogue;
     h+=`<g class="node${off?' off':''}" data-id="${d.id}" tabindex="0" role="button" aria-label="${esc(d.name)}" style="--zc:${zc(d.vlan)}" transform="translate(${d.x},${d.y})">
-      <rect class="hit" x="-30" y="-29" width="184" height="58" rx="9"/>
-      <rect class="body" x="-22" y="-22" width="44" height="44" rx="10"/>
-      <g class="ico">${ICON[d.type]}</g>
-      ${off?`<text x="0" y="9" text-anchor="middle" font-size="28" font-weight="700" style="fill:var(--bad)">✕</text>`:''}
-      <text x="34" y="-3" font-size="14" font-weight="600">${esc(d.name)}</text>
-      ${rg?`<text x="34" y="16" font-size="12" font-weight="700" style="fill:var(--bad)">${esc(rg)}</text>`:`<text class="m" x="34" y="16" font-size="12.5">${d.ip||'—'}</text>`}</g>`;
+      <rect class="card" x="-22" y="-27" width="156" height="54" rx="12"/>
+      <circle class="icoc" r="17"/>
+      ${off?`<text x="0" y="7" text-anchor="middle" font-size="20" font-weight="800" style="fill:var(--bad)">✕</text>`:`<g class="ico" transform="scale(.72)">${ICON[d.type]}</g>`}
+      <text x="26" y="-3" font-size="13.5" font-weight="700">${esc(d.name)}</text>
+      ${rg?`<text x="26" y="14" font-size="11" font-weight="700" style="fill:var(--bad)">${esc(rg)}</text>`:`<text class="m" x="26" y="14" font-size="11.5">${d.ip||'—'}</text>`}</g>`;
   });
-  if(S.unused)h+=`<g transform="translate(700,640)"><rect class="rogue" x="-88" y="-12" width="176" height="24" rx="12"/><text x="0" y="4.5" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">socket 9: intruder, no signal</text></g>`;
+  if(S.unused)h+=`<g transform="translate(700,630)"><rect class="rogue" x="-84" y="-11" width="168" height="22" rx="11"/><text x="0" y="4" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">socket 9: intruder, no signal</text></g>`;
   const extra=DEVS.filter(d=>d.hidden).length;
-  if(extra)h+=`<g transform="translate(900,640)"><rect class="rogue" style="fill:var(--surface2);stroke:var(--z-wifi)" x="-70" y="-12" width="140" height="24" rx="12"/><text x="0" y="4.5" text-anchor="middle" font-size="12" font-weight="600">+${extra} more fan phones</text></g>`;
-  h+='<g id="burst"></g><g id="pkts"></g>';
+  if(extra)h+=`<g transform="translate(900,630)"><rect class="rogue" style="fill:var(--surface);stroke:var(--z-wifi)" x="-70" y="-11" width="140" height="22" rx="11"/><text x="0" y="4" text-anchor="middle" font-size="11" font-weight="700">+${extra} more fan phones</text></g>`;
+  h+='<g id="pkts"></g><g id="burst"></g>';
   svg.innerHTML=h;
   if(S.sel){const n=$(`.node[data-id="${S.sel}"]`,svg);if(n)n.classList.add('sel');}
 }
@@ -631,10 +754,16 @@ const vlanOfSw=id=>VLANS.find(v=>v.sw===id);
 const STATE_TXT={up:'working','err-disabled':'locked','admin-down':'switched off'};
 function renderInspector(){
   const el=$('#inspector'),id=S.sel;
-  if(!id){el.innerHTML=`<b>Click any device on the map</b><p class="note" style="margin:4px 0 0">You will see its address, which zone it belongs to and where it is plugged in. You can then use it as the sender or receiver of a test.</p>`;return;}
+  if(!id){el.innerHTML=`<b>Nothing selected</b><p class="note" style="margin:4px 0 0">Click any device on the map to see its address, its zone and where it is plugged in. Click a coloured address on the Main Switch to see that zone's exit door and its rules.</p>`;return;}
   const kv=a=>`<div class="kv">${a.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>`;
   if(id==='CORE-SWITCH'){el.innerHTML=`<div class="row sp"><b>Main Switch</b><span class="note">A Layer 3 switch: a switch that can also route between zones</span></div>`+kv([['Exit doors','5, one per zone (192.168.10.1 to 192.168.50.1)'],['Link to Internet Router',CORE_LINK],['Jobs','routing between zones, rule lists, addresses, fast lane'],['Messages blocked so far',denyHits()]]);return;}
   if(id==='INTERNET-ROUTER'){el.innerHTML=`<div class="row sp"><b>Internet Router</b><span class="note">The stadium’s way out to the Internet</span></div>`+kv([['Inside address',ROUTER_LINK],['Outside address','203.0.113.2'],['Jobs','swaps private addresses for one public one (NAT)']]);return;}
+  if(byId[id]&&byId[id].type==='gateway'){
+    const g=byId[id],z=vById[g.vlan],a=ACLS[z.id];
+    el.innerHTML=`<div class="row sp"><b>${esc(z.short)} exit door</b><span class="chip z" style="--zc:${zc(z.id)}">VLAN ${z.id} · ${esc(z.label)}</span></div>`+kv([['Address',g.ip],['Where it lives','on the Main Switch (a virtual interface, SVI)'],['Rule list',`${a.lines.length} rules + a hidden block-all`],['Times its rules were used',a.lines.reduce((x,l)=>x+l.hits,0)]])+
+      `<div class="actions"><button class="btn sm" data-set="dst" data-id="${g.id}">Send a test here</button><button class="btn sm" data-tab="sec">Read its rules</button></div>`;
+    return;
+  }
   const v=vlanOfSw(id);
   if(v){const ps=PORTS.filter(p=>p.sw===id);el.innerHTML=`<div class="row sp"><b>${esc(v.swName)}</b><span class="chip z" style="--zc:${zc(v.id)}">VLAN ${v.id} · ${esc(v.label)}</span></div>`+kv([['Zone addresses',`${v.pre}.x (${v.cidr})`],['Exit door',v.gw],['Cable to Main Switch','carries VLAN '+v.id+' (trunk)'],['Sockets',ps.map(p=>`${sockN(p.port)}: ${STATE_TXT[p.state]}`).join(', ')]]);return;}
   const d=byId[id];
@@ -649,46 +778,64 @@ function renderInspector(){
   ])+`<div class="actions"><button class="btn sm" data-set="src" data-id="${d.id}">Send a test from here</button><button class="btn sm" data-set="dst" data-id="${d.id}">Send a test here</button></div>`;
 }
 $('#inspector').addEventListener('click',e=>{
+  const t=e.target.closest('[data-tab]');if(t){showTab(t.dataset.tab);$('#tabs').scrollIntoView({behavior:'smooth',block:'start'});return;}
   const b=e.target.closest('[data-set]');if(!b)return;
-  $(b.dataset.set==='src'?'#tSrc':'#tDst').value=b.dataset.id;showTab('tests');
+  $(b.dataset.set==='src'?'#tSrc':'#tDst').value=b.dataset.id;
+  const f=$('#sendform');f.classList.remove('flash');void f.offsetWidth;f.classList.add('flash');
+  if(!inView($('#sendcard')))$('#sendcard').scrollIntoView({behavior:'smooth',block:'nearest'});
 });
 
 /* ---------- message animation ---------- */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-function animatePts(pts,color){
+const inView=el=>{const r=el.getBoundingClientRect();return r.top<innerHeight-120&&r.bottom>120;};
+/* a glowing dot slides along the exact cable points and leaves a trail behind it */
+function animatePts(pts,color,label){
   return new Promise(res=>{
     if(!S.anim||pts.length<2)return res();
-    const layer=$('#pkts'),dot=document.createElementNS(NS,'circle');
-    dot.setAttribute('r',6);dot.setAttribute('class','pkt');dot.setAttribute('fill',color);layer.appendChild(dot);
     const seg=[];let tot=0;
     for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);seg.push(d);tot+=d;}
-    const dur=Math.max(250,tot/560*1000),t0=performance.now();
+    const trail=document.createElementNS(NS,'polyline');
+    trail.setAttribute('class','trail');trail.setAttribute('points',pts2s(pts));
+    trail.style.stroke=color;trail.style.strokeDasharray=tot;trail.style.strokeDashoffset=tot;
+    $('#trails').appendChild(trail);
+    const g=document.createElementNS(NS,'g');g.setAttribute('class','pk');
+    const w=label?label.length*6.9+14:0;
+    g.innerHTML=`<circle class="halo" r="15" fill="${color}"/><circle class="pc" r="7.5" fill="${color}"/>`+
+      (label?`<rect x="12" y="-27" width="${w}" height="19" rx="6" fill="${color}"/><text x="${12+w/2}" y="-13.5" text-anchor="middle" font-size="11" font-weight="700">${esc(label)}</text>`:'');
+    $('#pkts').appendChild(g);
+    const dur=Math.max(500,tot/400*1000),t0=performance.now();
     (function f(t){
-      const k=Math.min(1,(t-t0)/dur);let dist=k*tot,i=0;
+      const k=Math.min(1,(t-t0)/dur),e=k<.5?2*k*k:1-2*(1-k)*(1-k);
+      let dist=e*tot,i=0;
       while(i<seg.length-1&&dist>seg[i]){dist-=seg[i];i++;}
-      const a=pts[i],b=pts[i+1],r=seg[i]?dist/seg[i]:0;
-      dot.setAttribute('cx',a[0]+(b[0]-a[0])*r);dot.setAttribute('cy',a[1]+(b[1]-a[1])*r);
-      if(k<1)requestAnimationFrame(f);else{dot.remove();res();}
+      const a=pts[i],b=pts[i+1],r=seg[i]?Math.min(1,dist/seg[i]):0;
+      g.setAttribute('transform',`translate(${a[0]+(b[0]-a[0])*r},${a[1]+(b[1]-a[1])*r})`);
+      trail.style.strokeDashoffset=tot*(1-e);
+      if(k<1)requestAnimationFrame(f);
+      else{g.remove();trail.classList.add('fade');setTimeout(()=>trail.remove(),800);res();}
     })(t0);
   });
 }
-async function burst(x,y,text,color){
+async function burst(x,y,text,color,ok){
   if(!S.anim)return;
-  const g=document.createElementNS(NS,'g');g.setAttribute('class','burst');
-  g.innerHTML=`<circle cx="${x}" cy="${y}" r="14" fill="${color}" opacity=".18"/><text x="${x}" y="${y+7}" text-anchor="middle" font-size="22" style="fill:${color}">✕</text><text x="${x}" y="${y-22}" text-anchor="middle" font-size="13" font-weight="700" style="fill:${color}">${esc(text)}</text>`;
-  $('#burst').appendChild(g);await sleep(900);g.remove();
+  const w=text.length*7+20,lx=Math.max(w/2+4,Math.min(1000-w/2-4,x));
+  const g=document.createElementNS(NS,'g');g.setAttribute('class','bx');
+  g.innerHTML=`<circle class="ring" cx="${x}" cy="${y}" r="14" stroke="${color}"/><circle cx="${x}" cy="${y}" r="14" fill="${color}"/>
+    <text class="ic" x="${x}" y="${y+5.5}" text-anchor="middle" font-size="16" font-weight="800">${ok?'✓':'✕'}</text>
+    <rect class="lab" x="${lx-w/2}" y="${y-50}" width="${w}" height="24" rx="8" stroke="${color}" stroke-width="1.6"/>
+    <text x="${lx}" y="${y-33.5}" text-anchor="middle" font-size="12" font-weight="700" style="fill:${color}">${esc(text)}</text>`;
+  $('#burst').appendChild(g);await sleep(1400);g.remove();
 }
 async function playPlan(R,s,d){
-  const ok=css('--ok'),acc=css('--accent'),bad=css('--bad'),pl=R.plan;
+  const fw=css('--pkt'),rv=css('--pkt2'),bad=css('--bad'),okc=css('--ok'),pl=R.plan,lab=R.ps;
   if(!pl||pl.t==='none')return;
-  const end=r=>r.pts[r.pts.length-1];
-  if(pl.t==='ok'){await animatePts(route(s.id,d.id).pts,acc);await animatePts(route(d.id,s.id).pts,ok);return;}
-  if(pl.t==='gw'){const r=route(s.id,'CORE-SWITCH');await animatePts(r.pts,acc);await animatePts([...r.pts].reverse(),ok);return;}
-  if(pl.t==='core'){const r=route(s.id,'CORE-SWITCH');await animatePts(r.pts,acc);const p=end(r);await burst(p[0],p[1],pl.label,bad);return;}
-  if(pl.t==='ret'){await animatePts(route(s.id,d.id).pts,acc);const r=route(d.id,'CORE-SWITCH');await animatePts(r.pts,ok);const p=end(r);await burst(p[0],p[1],pl.label,bad);return;}
-  if(pl.t==='dead'){const r=route(s.id,pl.at);await animatePts(r.pts,acc);const p=end(r);await burst(p[0],p[1],pl.label,bad);return;}
-  if(pl.t==='end'){await animatePts(route(s.id,d.id).pts,acc);await burst(d.x,d.y,pl.label,bad);return;}
-  if(pl.t==='gwend'){const r=route(s.id,'CORE-SWITCH');await animatePts(r.pts,acc);const p=end(r);await burst(p[0],p[1],pl.label,bad);return;}
+  const go=async(a,b,c,l)=>{const r=route(a,b);await animatePts(r.pts,c,l);return r.pts[r.pts.length-1];};
+  const stop=(p,label)=>burst(p[0],p[1],label,bad,false);
+  if(pl.t==='ok'||pl.t==='gw'){await go(s.id,d.id,fw,lab);await go(d.id,s.id,rv,'reply');await burst(s.x,s.y,'reply received',okc,true);return;}
+  if(pl.t==='core'||pl.t==='gwend'){await stop(await go(s.id,'GW'+s.vlan,fw,lab),pl.label);return;}
+  if(pl.t==='ret'){await go(s.id,d.id,fw,lab);await stop(await go(d.id,'GW'+d.vlan,rv,'reply'),pl.label);return;}
+  if(pl.t==='dead'){await stop(await go(s.id,pl.at,fw,lab),pl.label);return;}
+  if(pl.t==='end'){await go(s.id,d.id,fw,lab);await burst(d.x,d.y,pl.label,bad,false);return;}
 }
 
 /* ---------- message engine ---------- */
@@ -713,7 +860,7 @@ function ruleStep(T,acl,f,zoneName){
 }
 function runFlow(sid,did,pr,count=true){
   const s=byId[sid],d=byId[did],P=PROTO[pr],T=[];
-  const R={ok:false,reason:'',steps:T,plan:{t:'none'},ms:null,s:sid,d:did,pl:P.label};
+  const R={ok:false,reason:'',steps:T,plan:{t:'none'},ms:null,s:sid,d:did,pl:P.label,ps:P.short};
   const sv=vById[s.vlan];
   if(!online(s)){R.reason=`${s.name} has no connection: its socket on the ${sv.swName} is locked.`;step(T,`${s.name}'s socket is locked, so nothing can be sent.`,'x');return R;}
   if(!online(d)){
@@ -812,12 +959,16 @@ function renderChecks(){
 }
 function addLog(R){S.log.unshift(R);if(S.log.length>30)S.log.pop();S.tests++;renderLog();renderStats();}
 function renderLog(){
-  $('#log').innerHTML=S.log.map((r,i)=>`<details class="le"${i===0?' open':''}><summary><span class="chip ${r.ok?'ok':'bad'}">${r.ok?'ALLOWED':'BLOCKED'}</span><b>${esc(nm(r.s))}</b> → <b>${esc(nm(r.d))}</b><span class="muted">${esc(r.pl)}</span><span class="rtt">${r.ms?r.ms+' ms':''}</span></summary><div class="why">${esc(r.reason)}</div><ol class="steps">${r.steps.map(s=>`<li class="${s.cls||''}">${esc(s.txt)}${s.code&&S.ios?`<code>${esc(s.code)}</code>`:''}</li>`).join('')}</ol></details>`).join('')||'<p class="note">Nothing sent yet.</p>';
+  $('#log').innerHTML=S.log.map((r,i)=>`<details class="le${r.ok?' okk':''}"${i===0?' open':''}><summary><span class="chip ${r.ok?'ok':'bad'}">${r.ok?'ALLOWED':'BLOCKED'}</span><b>${esc(nm(r.s))}</b> → <b>${esc(nm(r.d))}</b><span class="rtt">${r.ms?r.ms+' ms':''}</span><span class="pl">${esc(r.pl)}</span></summary><div class="why">${esc(r.reason)}</div><ol class="steps">${r.steps.map(s=>`<li class="${s.cls||''}">${esc(s.txt)}${s.code&&S.ios?`<code>${esc(s.code)}</code>`:''}</li>`).join('')}</ol></details>`).join('')||'<p class="note">Nothing sent yet. Pick two devices above and press Send message.</p>';
 }
 async function doTest(s,d,pr){
   if(S.busy)return null;
   S.busy=true;
-  try{const R=runFlow(s,d,pr,true);addLog(R);renderAcls();await playPlan(R,byId[s],byId[d]);return R;}
+  try{
+    const R=runFlow(s,d,pr,true);addLog(R);renderAcls();$('#log').scrollTop=0;
+    if(S.anim&&!inView($('#svg'))){$('#mapcard').scrollIntoView({behavior:'smooth',block:'start'});await sleep(550);}
+    await playPlan(R,byId[s],byId[d]);return R;
+  }
   finally{S.busy=false;}
 }
 $('#tRun').addEventListener('click',()=>{
@@ -834,6 +985,7 @@ $('#checks tbody').addEventListener('click',async e=>{
 });
 function runAllChecks(){CHECKS.forEach((c,i)=>{checkRes[i]=runFlow(c[0],c[1],c[2],true);});renderChecks();renderAcls();renderStats();}
 $('#runAll').addEventListener('click',runAllChecks);
+$('#clearLog').addEventListener('click',()=>{S.log=[];renderLog();});
 
 /* ---------- Addresses tab ---------- */
 function renderAddr(){
@@ -862,11 +1014,11 @@ $('#renew').addEventListener('click',async()=>{
 });
 $('#addFan').addEventListener('click',async()=>{
   fanSeq++;const id='FAN-'+fanSeq;
-  const o={id,name:'Fan Phone '+fanSeq,type:'phone',vlan:50,port:null,ip:null,static:false,svc:[],sw:'WIFI-SWITCH',x:900+BUS,y:ROWY.C,mac:`00:1B:54:32:00:${hex2(++macSeq)}`,via:'WIFI-AP',hidden:true};
+  const o={id,name:'Fan Phone '+fanSeq,type:'phone',vlan:50,port:null,ip:null,static:false,svc:[],sw:'WIFI-SWITCH',x:900+ICO,y:ROWY.C,mac:`00:1B:54:32:00:${hex2(++macSeq)}`,via:'WIFI-AP',hidden:true};
   o.ip=leaseIp(o);
   if(!o.ip){dora('Main Switch','The Fan WiFi address pool is full. A bigger range or a second WiFi zone would be needed.');fanSeq--;return;}
   DEVS.splice(DEVS.length-1,0,o);byId[id]=o;
-  indexLink(LINKS.push({a:'WIFI-AP',b:id,pts:[[byId['WIFI-AP'].x,byId['WIFI-AP'].y],[o.x,o.y]],wl:true})-1);
+  indexLink(LINKS.push(devLink(o))-1);
   fillSelects();drawSvg();renderAddr();renderStats();
   await showDhcp(o);
 });
@@ -1133,11 +1285,12 @@ $('#gloss').innerHTML=[
 ].map(g=>`<dt>${g[0]}</dt><dd>${g[1]}<small>${g[2]}</small></dd>`).join('');
 
 /* ---------- legend, header numbers, tabs, theme ---------- */
-$('#legend').innerHTML=VLANS.map(v=>`<span><i style="background:${zc(v.id)}"></i>${esc(v.short)}</span>`).join('');
+$('#legend').innerHTML=VLANS.map(v=>`<span><i style="background:${zc(v.id)}"></i>${esc(v.short)}</span>`).join('')+
+  '<span class="sep"></span><span><span class="dot" style="background:var(--pkt)"></span>message</span><span><span class="dot" style="background:var(--pkt2)"></span>reply</span><span><span class="ln"></span>cable</span><span><span class="ln d"></span>wireless</span>';
 function renderStats(){
   const hosts=DEVS.filter(d=>d.type!=='cloud'),on=hosts.filter(online).length,viol=PORTS.reduce((a,p)=>a+p.viol,0);
-  $('#stats').innerHTML=[[`${on}/${hosts.length}`,'devices online'],[denyHits(),'blocked by rules'],[viol,'intruders caught'],[Q.on?'ON':'OFF','fast lane'],[S.tests,'tests sent']]
-    .map(x=>`<div class="stat"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('');
+  $('#stats').innerHTML=[[`${on}/${hosts.length}`,'devices online',on===hosts.length?'ok':'bad'],[denyHits(),'blocked by rules',''],[viol,'intruders caught',viol?'bad':''],[Q.on?'ON':'OFF','fast lane',Q.on?'hi':'bad'],[S.tests,'messages sent','']]
+    .map(x=>`<div class="stat"><b class="${x[2]}">${x[0]}</b><span>${x[1]}</span></div>`).join('');
 }
 function showTab(t){
   $$('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===t)));
