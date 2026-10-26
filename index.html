@@ -170,6 +170,9 @@ tr:last-child td{border-bottom:0}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 tr.click{cursor:pointer}
 tr.click:hover td{background:var(--surface2)}
+#checks tr.hl td{animation:rowhl 1.2s ease-out}
+@keyframes rowhl{from{background:var(--accent-soft)}to{background:transparent}}
+.btn:disabled{opacity:.6;cursor:wait}
 .tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 .tscroll table td:first-child,.tscroll table th:first-child{padding-left:14px}
 .chip{display:inline-block;font:600 11.5px/1 var(--f-mono);letter-spacing:.04em;padding:5px 8px;border-radius:6px;white-space:nowrap}
@@ -399,7 +402,7 @@ ol.demo li{margin:6px 0}
 
     <!-- DESIGN -->
     <div class="pane" id="pane-design" role="tabpanel" hidden>
-      <div class="intro"><b>What this tab shows:</b> how the network is organised, what each zone needs, and how the design changed between Review 1 and now.</div>
+      <div class="intro"><b>What this tab shows:</b> how the network is organised, what each zone needs, and the limits of this simulator.</div>
       <h3 style="margin-top:0">Three layers</h3>
       <div class="tscroll"><table>
         <thead><tr><th>Layer</th><th>Device</th><th>Job</th></tr></thead>
@@ -411,9 +414,6 @@ ol.demo li{margin:6px 0}
         </tbody></table></div>
       <h3>What each zone needs</h3>
       <div class="tscroll"><table id="req"></table></div>
-      <h3>Changes since Review 1</h3>
-      <p class="note">The Review 1 plan used the same five zones and the same addresses. While building it we improved several parts.</p>
-      <div class="tscroll"><table id="changes"></table></div>
       <h3>Limits of this simulator</h3>
       <p class="note">It models zones, routing between zones, automatic addresses, rule lists (including replies), socket locks and a queue model for the fast lane. It does not run real Cisco software, spanning tree or routing protocols. Delay and loss figures come from a simple model, so they show the effect rather than exact numbers. The Device setup tab lets the same design be built on real equipment.</p>
     </div>
@@ -431,16 +431,6 @@ ol.demo li{margin:6px 0}
       </ol>
       <h3>Words used on this site</h3>
       <dl class="gl" id="gloss"></dl>
-      <h3>5-minute demo for the viva</h3>
-      <ol class="demo">
-        <li><b>Map:</b> point out the five coloured zones, the Main Switch in the middle and the Internet Router at the top.</li>
-        <li><b>Addresses tab:</b> show that each zone has its own range, then press "Show how a device gets an address".</li>
-        <li><b>Send a message panel</b> (next to the map): send Press Laptop to Ticket Server, secure web: allowed. Then Fan Phone 1 to Payment Server: blocked, and read out the rule that stopped it.</li>
-          <li><b>Planned tests tab:</b> press Run all tests and show that all 15 match the plan.</li>
-        <li><b>Security tab:</b> show the "who can reach whom" grid, then press "Swap a camera for a laptop" and show Camera 1 go offline.</li>
-        <li><b>Fast lane tab:</b> press "Goal scored", turn the fast lane off (TV feed breaks), then on again (TV feed recovers).</li>
-        <li><b>Device setup tab:</b> show that the same design is ready as Cisco commands.</li>
-      </ol>
     </div>
   </section>
 </main>
@@ -1063,7 +1053,17 @@ $('#checks tbody').addEventListener('click',async e=>{
   const R=await doTest(c[0],c[1],c[2]);
   if(R){checkRes[i]=R;renderChecks();}
 });
-function runAllChecks(){CHECKS.forEach((c,i)=>{checkRes[i]=runFlow(c[0],c[1],c[2],true);});renderChecks();renderAcls();renderStats();}
+async function runAllChecks(){
+  if(S.running)return;S.running=true;
+  const btn=$('#runAll');btn.disabled=true;btn.textContent='Running…';
+  checkRes.length=0;renderChecks();
+  for(let i=0;i<CHECKS.length;i++){
+    const c=CHECKS[i];checkRes[i]=runFlow(c[0],c[1],c[2],true);renderChecks();
+    const tr=$(`#checks tr[data-i="${i}"]`);if(tr)tr.classList.add('hl');
+    await sleep(160);
+  }
+  renderAcls();renderStats();btn.disabled=false;btn.textContent='Run all tests again';S.running=false;
+}
 $('#runAll').addEventListener('click',runAllChecks);
 $('#clearLog').addEventListener('click',()=>{S.log=[];renderLog();});
 
@@ -1328,16 +1328,6 @@ $('#req').innerHTML=`<thead><tr><th>Zone</th><th>What travels here</th><th>What 
   [40,'Camera video to the recorder','No Internet, no access from other zones, tamper proof','Cameras rule list blocks everything; sockets allow 1 device; empty sockets switched off'],
   [50,'Fans’ phones','Internet only','Fan WiFi rule list blocks every stadium system; normal priority']
 ].map(r=>`<tr><td><span class="chip z" style="--zc:${zc(r[0])}">VLAN ${r[0]} · ${esc(vById[r[0]].short)}</span></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')+'</tbody>';
-$('#changes').innerHTML=`<thead><tr><th>Part</th><th>Review 1 plan</th><th>Now</th><th>Why it is better</th></tr></thead><tbody>`+[
-  ['Zones and addresses','5 VLANs, 192.168.10.0/24 to 192.168.50.0/24','Same','Kept as planned'],
-  ['Routing between zones','One router with 5 sub-interfaces on one cable (router-on-a-stick)','A Layer 3 Main Switch with one exit door per zone','Every message between zones no longer squeezes through one cable to the router; the switch routes faster and the router only handles the Internet'],
-  ['Zone switches','One or more switches','One switch per zone','A fault in one zone does not affect the others; easier to lock sockets per zone'],
-  ['Automatic addresses','DHCP on the router','DHCP on the Main Switch','The exit doors live on the Main Switch, so it is the natural place to hand out addresses'],
-  ['Rule lists','Fan WiFi blocked from Ticketing, POS, CCTV','A full rule list for every zone','Covers real needs (press accreditation, security desk footage, tills only reach the card company) and blocks everything else'],
-  ['Socket locks','POS and CCTV sockets','Every socket; strict on POS, CCTV and WiFi; empty sockets switched off','No zone is left open to a plugged-in intruder'],
-  ['Fast lane (QoS)','Not planned','TV feed first, payments reserved','Testing showed a fan surge would break the live TV feed'],
-  ['Tool','Cisco Packet Tracer','Browser simulator, plus Cisco commands ready for Packet Tracer','Shows messages, rule matches, attacks and congestion live; Packet Tracer has limited QoS support. Packet Tracer was confirmed as optional.']
-].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')+'</tbody>';
 $('#gloss').innerHTML=[
   ['Network','Devices connected so they can send each other messages.','Here: the whole stadium system.'],
   ['IP address','A device’s home address.','Gate 1 lives at 192.168.10.21.'],
@@ -1394,7 +1384,7 @@ window.addEventListener('resize',drawQos);
 fillSelects();
 $('#tSrc').value='FAN-1';$('#tDst').value='PAYMENT-SERVER';$('#tPro').value='https';
 drawSvg();renderInspector();
-runAllChecks();
+renderChecks();
 addLog(runFlow('FAN-1','PAYMENT-SERVER','https',true));
 renderAddr();renderAcls();renderPorts();renderSys();renderCfg();
 setFans(4000);
