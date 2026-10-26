@@ -1293,7 +1293,8 @@ function cfgAccess(v){
     '! --- 2. Cable to the Main Switch (trunk) ---','interface GigabitEthernet0/1',' description Cable to CORE-SWITCH',' switchport mode trunk',` switchport trunk allowed vlan ${v.id}`,' switchport nonegotiate','!',
     `! --- 3. Device sockets: zone ${v.id}, locked to the first device (max ${ps[0]?ps[0].max:1}) ---`];
   ps.forEach(p=>L.push(`interface FastEthernet${p.port.slice(2)}`,` description ${p.dev}`,' switchport mode access',` switchport access vlan ${v.id}`,' switchport port-security',` switchport port-security maximum ${p.max}`,' switchport port-security mac-address sticky',' switchport port-security violation shutdown',' spanning-tree portfast',' spanning-tree bpduguard enable','!'));
-  L.push('! --- 4. Unused sockets: switched off and parked ---','interface range FastEthernet0/4 - 24',' description UNUSED',' switchport mode access',' switchport access vlan 999',' shutdown','!',
+  const next=Math.max(...ps.map(p=>+sockN(p.port)))+1;
+  L.push('! --- 4. Unused sockets: switched off and parked ---',`interface range FastEthernet0/${next} - 24`,' description UNUSED',' switchport mode access',' switchport access vlan 999',' shutdown','!',
     '! If a socket locks after an intruder: remove the device, then type','! "shutdown" and "no shutdown" on that socket.','end');
   return L.join('\n');
 }
