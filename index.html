@@ -194,6 +194,12 @@ tr.click:hover td{background:var(--surface2)}
 .le .rtt{margin-left:auto;font:500 11.5px var(--f-mono);color:var(--muted)}
 .le .why{padding:0 12px 10px;font-size:14px}
 .le .pl{width:100%;font-size:12.5px;color:var(--muted)}
+.ex{margin:0 12px 10px;padding:10px 12px;border-radius:10px;background:var(--accent-soft);font-size:13.5px;line-height:1.5}
+.ex p{margin:6px 0 0}
+.exh{font:700 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.ex .hint{padding:6px 9px;border-left:3px solid var(--warn);background:var(--surface);border-radius:6px}
+.ex .ty{color:var(--muted)}
+.st>summary{cursor:pointer;padding:4px 12px 8px;font-size:13px;color:var(--muted);font-weight:600}
 ol.steps{margin:0;padding:10px 14px 10px 32px;background:var(--surface2);border-top:1px solid var(--line);border-radius:0 0 12px 0;font-size:13.5px}
 ol.steps li{margin:4px 0}
 ol.steps li.x{color:var(--bad)}
@@ -205,6 +211,7 @@ pre.code{padding:14px;background:var(--surface2);border:1px solid var(--line);bo
 .cons div{padding:4px 0;border-bottom:1px dashed var(--line)}
 .cons div:last-child{border-bottom:0}
 .cons .who{font-weight:700}
+.cons div:not(:has(.who)){color:var(--ink);font-weight:500}
 .acl{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--surface);overflow:hidden}
 .acl>summary{padding:10px 12px;cursor:pointer;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-weight:600}
 .acl table{font-size:13.5px}
@@ -324,6 +331,7 @@ ol.demo li{margin:6px 0}
       <p class="note" style="margin-top:8px">Every zone uses a /24 range, meaning 254 usable addresses. Addresses .1 to .20 are kept for fixed devices: .1 is always the zone's exit door (gateway), servers use .10 and .11, the WiFi access point uses .5. Automatic addresses start at .21. A real stadium would give fans a much larger range, or several WiFi zones; one /24 keeps this lab model simple.</p>
       <div class="row sp"><h3 style="margin:18px 0 8px">Every device and its address</h3>
         <div class="row"><button class="btn sm" id="renew" type="button">Show how a device gets an address</button><button class="btn sm" id="addFan" type="button">Connect a new fan phone</button></div></div>
+      <p class="note" style="margin-top:0">Press a button, then look at the <b>Address conversation</b> box at the bottom of this tab.</p>
       <div class="tscroll"><table id="ltab"></table></div>
       <h3>Address conversation (DHCP)</h3>
       <div class="cons" id="dora" aria-live="polite"></div>
@@ -860,7 +868,7 @@ function ruleStep(T,acl,f,zoneName){
 }
 function runFlow(sid,did,pr,count=true){
   const s=byId[sid],d=byId[did],P=PROTO[pr],T=[];
-  const R={ok:false,reason:'',steps:T,plan:{t:'none'},ms:null,s:sid,d:did,pl:P.label,ps:P.short};
+  const R={ok:false,reason:'',steps:T,plan:{t:'none'},ms:null,s:sid,d:did,pl:P.label,ps:P.short,pr};
   const sv=vById[s.vlan];
   if(!online(s)){R.reason=`${s.name} has no connection: its socket on the ${sv.swName} is locked.`;step(T,`${s.name}'s socket is locked, so nothing can be sent.`,'x');return R;}
   if(!online(d)){
@@ -906,6 +914,78 @@ function runFlow(sid,did,pr,count=true){
   step(T,'Reply received.','ok');
   R.ok=true;R.reason=inet?`Allowed out to the Internet through the Internet Router.`:`Allowed between ${sv.short} and ${dv.short}: the rules permit both the message and the reply.`;
   R.ms=delay(inet?'in':'rt');R.plan={t:'ok'};return R;
+}
+/* ---------- plain-language explanation shown in the message log ---------- */
+const TYPE_WHY={
+  icmp:'a tiny “are you there?” message. It carries no data; it only tests whether one device can reach another.',
+  https:'like a sealed envelope: the data is locked so only the sender and receiver can read it. Used for anything private, such as payments and passwords.',
+  http:'like a postcard: anyone on the cable could read it. Fine for public pages, never for anything private.',
+  dns:'the phone book: it turns a name like cardcompany.com into an address, so the device knows where to send.'
+};
+const RULE_WHY={
+  gw:'Every zone can always reach its own exit door (gateway). Without this, no device could ever leave its zone.',
+  dhcp:'New devices must be able to ask for an address (DHCP), otherwise they could not join the network.',
+  '10:30':'Ticketing never starts conversations with the press box; it may only answer. This is the answer to the press box’s ping.',
+  '10:40':'This is the Ticket Server answering a journalist’s press-pass (accreditation) check. Ticketing may answer the press box, but not start a conversation with it.',
+  '10:50':'The security desk sits with the gate staff, so Ticketing may check that the video recorder is switched on and working.',
+  '10:60':'The security desk may watch recorded footage, for example to check an incident at a gate. Only the recorder, never the cameras themselves, and only over secure web.',
+  '10:70':'Ticketing keeps to itself. Apart from answering the press box and the security desk’s footage access, it may not reach other zones, so a hacked gate scanner cannot spread to tills or cameras.',
+  '10:80':'Gate scanners and the ticket server may use the Internet, for example for online ticket sales.',
+  '20:30':'Tills handle card payments. Banking rules (PCI DSS) say a payment system must be cut off from everything else in the stadium, so no other zone can be reached from here.',
+  '20:40':'Tills send card payments to the card company over secure web (HTTPS), a sealed envelope.',
+  '20:50':'Before paying, the till looks up the card company’s address with DNS (the phone book).',
+  '20:60':'A till needs only two things: find the card company (DNS) and pay it (HTTPS). Everything else, even a ping to the Internet, is closed and logged, so a hacked till cannot be used for anything else.',
+  '30:30':'Journalists may check that the ticket server is reachable.',
+  '30:40':'Journalists check press passes (accreditation) on the ticket server, over secure web only.',
+  '30:50':'Press may reach only the ticket server, and only with ping or secure web. Plain web is a postcard anyone can read, so it is not allowed, and every other zone is off limits.',
+  '30:60':'The live TV feed has to leave the stadium for the broadcaster, so Press & TV get the Internet.',
+  '40:30':'The video recorder may answer the security desk’s pings, but the camera zone never starts a conversation.',
+  '40:40':'The video recorder sends footage back to the security desk, but only as a reply to their request.',
+  '40:50':'Cameras are security equipment, so they are fully locked down: no Internet (nobody outside can watch or hack them) and no other zones. They may only reply to the security desk.',
+  '50:30':'Fans are strangers. Their phones may never reach any stadium system: tickets, payments, cameras or press. This is the most important rule in the network.',
+  '50:40':'Fans came for WiFi, so they get the Internet.'
+};
+const ruleTxt=f=>f.e?`rule ${f.e.n} (“${f.e.why}”)`:'the hidden last rule';
+function whyOf(v,f){
+  if(!f.e)return 'Anything not clearly allowed is blocked by a hidden last rule. That is the safe default.';
+  return RULE_WHY[v+':'+f.e.n]||(f.e.n===10?RULE_WHY.gw:f.e.n===20?RULE_WHY.dhcp:'');
+}
+const LOCK_WHY='Port security makes each socket remember the hardware ID (MAC) of its own device. If a stranger is plugged in, the socket locks itself so the intruder cannot get onto the network. An admin has to remove the intruder and unlock it (Security tab: “Remove intruders and unlock sockets”).';
+function explain(R){
+  const s=byId[R.s],d=byId[R.d],P=PROTO[R.pr],sv=vById[s.vlan],X={what:'',why:'',hint:'',type:TYPE_WHY[R.pr]};
+  if(!online(s)){X.what=`${s.name}’s socket is locked, so nothing can be sent from it.`;X.why=LOCK_WHY;return X;}
+  if(!online(d)){const h=d.via?byId[d.via]:d;X.what=`${d.name} cannot be reached: its socket on the ${vById[h.vlan].swName} is ${STATE_TXT[portOf(h).state]}.`;X.why=LOCK_WHY;return X;}
+  const [fw,rv]=packets(s.ip,d.ip,R.pr);
+  if(d.type==='gateway'){
+    const f=evalAcl(ACLS[s.vlan],fw,false);
+    if(!f.permit){X.what=`${d.name} belongs to another zone. ${s.name} may only use its own exit door, so the ${sv.short} guard blocked it with ${ruleTxt(f)}.`;X.why=whyOf(s.vlan,f);return X;}
+    if(P.p!=='icmp'){X.what=`The guard let it through, but an exit door is not a website or a phone book. It only answers pings, so it refused the ${P.short}.`;X.why='An exit door (gateway) is only the doorway out of a zone. Its job is to pass messages on, so a ping is the only thing you can test on it.';return X;}
+    X.what=`${s.name} pinged its own exit door (${d.ip}) and got an answer, allowed by ${ruleTxt(f)}.`;X.why=whyOf(s.vlan,f);return X;
+  }
+  if(d.vlan!==null&&s.vlan===d.vlan){
+    X.what=`${s.name} and ${d.name} are both in the ${sv.short} zone. Inside a zone the switch passes messages straight across. Guards only stand at the exit doors, so no rules were checked.`;
+    if(!R.ok){X.what+=` The message arrived, but ${d.name} does not offer ${P.short}, so it refused.`;X.why='No guard stopped this. It is like asking a bakery for a phone: nobody stopped you at the door, the shop just does not sell it. Read the reason line to tell “blocked by a rule” apart from “not offered”.';}
+    else X.why='Devices that work together sit in the same zone so they can talk freely, like gate scanners and the ticket server. Send the same message to a device in another zone and it has to pass a guard.';
+    return X;
+  }
+  const f=evalAcl(ACLS[s.vlan],fw,false),inet=d.vlan===null,dv=inet?null:vById[d.vlan];
+  X.what=`${s.name} is in the ${sv.short} zone and ${inet?'the Internet is outside the stadium':d.name+' is in the '+dv.short+' zone'}. Different zones, so the message has to pass the ${sv.short} exit door, where a guard reads the rules from the top.`;
+  if(!f.permit){
+    X.what+=f.e?` The first rule that matched was ${ruleTxt(f)}, so it was blocked.`:' No rule allowed it, so the hidden last rule blocked it.';
+    X.why=whyOf(s.vlan,f);
+    const alt=ACLS[s.vlan].lines.filter(e=>e.a==='permit'&&e.p!=='ip'&&e.dp!==67&&!e.est&&e.t!=='echo-reply'&&(!f.e||e.n<f.e.n)&&inCidr(fw.src,e.s)&&inCidr(fw.dst,e.d));
+    if(alt.length)X.hint=`Notice: ${alt.map(e=>`rule ${e.n} allows ${what(e)}`).join(' and ')} to this receiver, but this message is ${P.short}, so it did not match. Same two devices, different result, only because of the message type.`;
+    return X;
+  }
+  X.what+=` ${ruleTxt(f).replace(/^r/,'R')} allowed it out.`;
+  X.why=whyOf(s.vlan,f);
+  if(!(P.p==='icmp'||d.svc.includes(P.dp))){X.what+=` It arrived, but ${d.name} does not offer ${P.short}, so it refused.`;X.hint='The guard did not stop this one. The receiver simply does not do that job.';return X;}
+  if(inet){X.what+=' The Internet Router then sent it out, swapping the private stadium address for its one public address (NAT).';return X;}
+  const r=evalAcl(ACLS[d.vlan],rv,false);
+  if(!r.permit){X.what+=` It arrived, but the reply has to leave through the ${dv.short} exit door, and that guard blocked it with ${ruleTxt(r)}. A conversation needs both directions, so it failed.`;X.why=whyOf(d.vlan,r);return X;}
+  X.what+=` The reply came back through the ${dv.short} exit door and ${ruleTxt(r)} allowed it too. Both directions must be allowed for a conversation to work.`;
+  X.why=whyOf(s.vlan,f)+' '+whyOf(d.vlan,r);
+  return X;
 }
 function aclOnly(sd,dd,pr){
   const [fw,rv]=packets(sd.ip,dd.ip,pr);
@@ -957,9 +1037,9 @@ function renderChecks(){
   const el=$('#allSum');el.textContent=done?`${pass} of ${CHECKS.length} work as planned`:'not run yet';
   el.className='pill '+(!done?'warn':pass===CHECKS.length?'ok':'bad');
 }
-function addLog(R){S.log.unshift(R);if(S.log.length>30)S.log.pop();S.tests++;renderLog();renderStats();}
+function addLog(R){if(R.pr&&!R.ex)R.ex=explain(R);S.log.unshift(R);if(S.log.length>30)S.log.pop();S.tests++;renderLog();renderStats();}
 function renderLog(){
-  $('#log').innerHTML=S.log.map((r,i)=>`<details class="le${r.ok?' okk':''}"${i===0?' open':''}><summary><span class="chip ${r.ok?'ok':'bad'}">${r.ok?'ALLOWED':'BLOCKED'}</span><b>${esc(nm(r.s))}</b> → <b>${esc(nm(r.d))}</b><span class="rtt">${r.ms?r.ms+' ms':''}</span><span class="pl">${esc(r.pl)}</span></summary><div class="why">${esc(r.reason)}</div><ol class="steps">${r.steps.map(s=>`<li class="${s.cls||''}">${esc(s.txt)}${s.code&&S.ios?`<code>${esc(s.code)}</code>`:''}</li>`).join('')}</ol></details>`).join('')||'<p class="note">Nothing sent yet. Pick two devices above and press Send message.</p>';
+  $('#log').innerHTML=S.log.map((r,i)=>`<details class="le${r.ok?' okk':''}"${i===0?' open':''}><summary><span class="chip ${r.ok?'ok':'bad'}">${r.ok?'ALLOWED':'BLOCKED'}</span><b>${esc(nm(r.s))}</b> → <b>${esc(nm(r.d))}</b><span class="rtt">${r.ms?r.ms+' ms':''}</span><span class="pl">${esc(r.pl)}</span></summary><div class="why">${esc(r.reason)}</div>${r.ex?`<div class="ex"><div class="exh">In simple words</div><p><b>What happened:</b> ${esc(r.ex.what)}</p>${r.ex.why?`<p><b>Why the network is set up like this:</b> ${esc(r.ex.why)}</p>`:''}${r.ex.hint?`<p class="hint">${esc(r.ex.hint)}</p>`:''}<p class="ty"><b>${({icmp:'Ping',https:'Secure web (HTTPS)',http:'Web (HTTP)',dns:'Name lookup (DNS)'})[r.pr]}</b> is${esc(r.ex.type)}</p></div>`:''}${r.steps.length?`<details class="st"><summary>Show every step</summary><ol class="steps">${r.steps.map(s=>`<li class="${s.cls||''}">${esc(s.txt)}${s.code&&S.ios?`<code>${esc(s.code)}</code>`:''}</li>`).join('')}</ol></details>`:''}</details>`).join('')||'<p class="note">Nothing sent yet. Pick two devices above and press Send message.</p>';
 }
 async function doTest(s,d,pr){
   if(S.busy)return null;
@@ -1009,7 +1089,7 @@ async function showDhcp(d){
 $('#renew').addEventListener('click',async()=>{
   if(S.renewing)return;S.renewing=true;
   for(const id of ['GATE-1','TILL-1','FAN-1']){await showDhcp(byId[id]);}
-  dora('','Every other automatic device goes through the same four steps.');
+  dora('','In simple words: a new device has no address, so it shouts to everyone “can anyone give me one?” (DISCOVER). The Main Switch offers a free address and tells it where its exit door is (OFFER). The device accepts (REQUEST) and the Main Switch confirms it for 8 hours (ACK). Every automatic device goes through these four steps; servers skip them because they have fixed addresses.');
   S.renewing=false;
 });
 $('#addFan').addEventListener('click',async()=>{
@@ -1021,6 +1101,7 @@ $('#addFan').addEventListener('click',async()=>{
   indexLink(LINKS.push(devLink(o))-1);
   fillSelects();drawSvg();renderAddr();renderStats();
   await showDhcp(o);
+  dora('',`In simple words: ${o.name} just joined the Fan WiFi and got ${o.ip}, the next free address (the phones before it already have the lower ones). Nobody set it up by hand. Now look at: the new row in the device table above, “In use” for Fan WiFi in the zone table, “+${DEVS.filter(x=>x.hidden).length} more fan phones” on the map, and ${o.name} in the From and To lists of the Send a message panel.`);
 });
 
 /* ---------- Security tab ---------- */
